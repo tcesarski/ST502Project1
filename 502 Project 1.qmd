@@ -37,6 +37,10 @@ The fifth method we will examine is a raw percentile interval using a parametric
 
 # Creation of Data Process and Code
 
+We want to generate 1000 random samples from a binomial where n varies across n=15, 30, and 100 and p values from 0.01 to 0.99 for 15 total values of p for a total of 45 combinations. We will then generate 1000 95% confidence intervals for each of our combinations and find properties of these confidence intervals. In order for a confidence interval to be "good", we want the observed coverage probability to be equal to or close to (1-$\alpha$). Some intervals will inherently miss where the true probability falls below or above the interval. Ideally, we would want these proportions that miss on both sides to be equal to $\alpha/2$. We also want a relatively narrow interval so that it gives us helpful information. For example, it is not helpful to say the true probability is between 0 and 1 or even 0.05 and 0.95 because the interval is too wide to even be beneficial. Therefore, we want to compare the average lengths of our intervals.
+
+We will start by considering the Wald Interval. 
+
 ```{r}
 sample_sizes <- c(15, 30, 100)
 p <- c(0.01, 0.05, 0.10, 0.20, 0.25, 0.35, 0.45, 0.5, 0.6, 0.65, 0.75, 0.8, 0.9, 0.95, 0.99)
@@ -63,11 +67,11 @@ for(i in 1:1000){
 
 # Code to Execute Monte Carlo Study (maybe join with above)
 
-Create a data frame for the Wald Interval that contains the sample size (n), the probability of success (p), the average length of the intervals, the coverage probability, the proportion of intervals that miss above, and the proportion of intervals that miss below. 
+We will create a data frame for the Wald Interval that contains the sample size (n), the probability of success (p), the average length of the intervals, the coverage probability, the proportion of intervals that miss above, and the proportion of intervals that miss below. 
 
 
 ```{r}
-#Initalize a "lengths" numeric vector to hold average lengths of size 45.
+#Initialize a "lengths" numeric vector to hold average lengths of size 45.
 lengths <- numeric(45)
 
 #Use a for loop to calculate the average lengths for each set of 1000 intervals. 
@@ -115,5 +119,20 @@ repeated_p <- rep(p, 3)
 #Store the n, p, lengths, coverage probabilities, and % missing above and below.
 wald_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = lengths, coverage_probs = coverage_probabilities, miss_low = miss_low, miss_high = miss_high)
 wald_summary
+
+#Summary with just n, p, and coverage probabilities.
+simplified_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = coverage_probabilities)
+simplified_summary
+
+
+library(ggplot2)
+ggplot(simplified_summary, aes(x=p, y=coverage_probs)) +
+  geom_line()+
+  facet_wrap(~sample_size) + 
+  labs(title = "Wald Interval Coverage Probabilities by Sample Size",
+       y = "Coverage Probabilities") +
+  geom_hline(slope = 0, yintercept = 0.95, color = "blue")
+
+
 
 ```
