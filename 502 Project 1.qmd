@@ -38,7 +38,23 @@ CP_int <- function(y, n, alpha = 0.05){
 }
 ```
 
-The fifth method we will examine is a raw percentile interval using a parametric bootstrap. The idea of a parametric bootstrap is to resample from a fitted distribution with replacement to get many samples of the same size. Then find the bootstrap estimate, and
+```{r}
+
+bootstrap_int <- function(y, n, alpha =0.05){
+  phat <- y/n
+  
+  boot_estimates <- replicate(100,{
+    boot_sample <- rbinom(1, size = n, prob = phat)
+    boot_phat <- boot_sample/n
+  })
+return(c(quantile(boot_estimates, 0.025), quantile(boot_estimates, 0.975)))
+}
+```
+
+
+
+
+The fifth method we will examine is a raw percentile interval using a parametric bootstrap. The idea of a parametric bootstrap is to resample from a fitted distribution with replacement to get many samples of the same size. Then find the bootstrap estimate and generate the bootstrap distribution. Finally, we will use the (1-$\alpha$/2) and $\alpha$/2 quantiles from this bootstrap distribution as the confidence interval.
 
 # Creation of Data Process and Code
 
@@ -53,13 +69,15 @@ p <- c(0.01, 0.05, 0.10, 0.20, 0.25, 0.35, 0.45, 0.5, 0.6, 0.65, 0.75, 0.8, 0.9,
 
 wald_confidence_int <- list()
 cp_confidence_int <- list()
-
+boot_percentile_confidence_int <- list()
 
 for(size in sample_sizes){
   for(prob in p){
    wald_CIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
    cp_CIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
-    data <- rbinom(n=1000, size, prob)
+   boot_CIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
+    
+   data <- rbinom(n=1000, size, prob)
 for(i in 1:1000){
   y<-data[i]
   
@@ -73,12 +91,19 @@ for(i in 1:1000){
   cp_CIs$lower[i] <- cp_interval[1]
   cp_CIs$upper[i] <- cp_interval[2]
   
+  boot_interval <- bootstrap_int(y, size)
+  
+  boot_CIs$lower[i] <- boot_interval[1]
+  boot_CIs$upper[i] <- boot_interval[2]
+  
 }
   wald_confidence_int[[paste0("Wald", "size_", size, "prob_", prob)]] <- wald_CIs
   cp_confidence_int[[paste0("Clopper-Pearson", "size_", size, "prob_", prob)]] <- cp_CIs
+  boot_percentile_confidence_int[[paste0("Bootstrap Percentile", "size_", size, "prob_", prob)]] <- boot_CIs
 
   }
 }
+
 ```
 
 # Code to Execute Monte Carlo Study (maybe join with above)
@@ -90,11 +115,14 @@ We will create a data frame for the Wald Interval that contains the sample size 
 #Initialize a "lengths" numeric vector to hold average lengths of size 45.
 wald_lengths <- numeric(45)
 cp_lengths <- numeric(45)
+boot_lengths <- numeric(45)
 
 #Use a for loop to calculate the average lengths for each set of 1000 intervals. 
 for(i in 1:45){
   wald_lengths[i] <- mean(wald_confidence_int[[i]]$upper - wald_confidence_int[[i]]$lower)
   cp_lengths[i] <- mean(cp_confidence_int[[i]]$upper - cp_confidence_int[[i]]$lower)
+  boot_lengths[i] <- mean(boot_percentile_confidence_int[[i]]$upper - boot_percentile_confidence_int[[i]]$lower)
+  
 }
 
 #Create a vector that contains the probabilities 3 times.
@@ -102,41 +130,41 @@ repeated_p <- rep(p, 3)
 #Initialize a numeric vector of length 45 to hold the coverage probabilities.
 wald_coverage_probabilities <- numeric(45)
 cp_coverage_probabilities <- numeric(45)
+boot_coverage_probabilities <- numeric(45)
+
 
 #Use a for loop to calculate the coverage probability (% containing true p) for each set of 1000 intervals.
 for (i in 1:45) {
-  wald_coverage_probabilities[i] <- mean(wald_confidence_int[[i]]$upper > repeated_p[i] & 
-                   wald_confidence_int[[i]]$lower < repeated_p[i])
-  cp_coverage_probabilities[i] <- mean(cp_confidence_int[[i]]$upper > repeated_p[i] & 
-                   cp_confidence_int[[i]]$lower < repeated_p[i])
+  wald_coverage_probabilities[i] <- mean(wald_confidence_int[[i]]$upper > repeated_p[i] & wald_confidence_int[[i]]$lower < repeated_p[i])
+  cp_coverage_probabilities[i] <- mean(cp_confidence_int[[i]]$upper > repeated_p[i] & cp_confidence_int[[i]]$lower < repeated_p[i])
+  boot_coverage_probabilities[i] <- mean(boot_percentile_confidence_int[[i]]$upper > repeated_p[i] & boot_percentile_confidence_int[[i]]$lower < repeated_p[i])
 }
 
-cp_coverage_probabilities
+
 
 #Find the percentage where the true p is above the interval. 
 wald_miss_low <- numeric(45)
 cp_miss_low <- numeric(45)
+boot_miss_low <- numeric(45)
 
 for (i in 1:45) {
   wald_miss_low[i] <- mean(wald_confidence_int[[i]]$upper < repeated_p[i])
   cp_miss_low[i] <- mean(cp_confidence_int[[i]]$upper < repeated_p[i])
+  boot_miss_low[i] <- mean(boot_percentile_confidence_int[[i]]$upper < repeated_p[i])
 }
-
-wald_miss_low
-cp_miss_low
 
 #Find the percentage where the true p is below the interval.
 
 wald_miss_high <- numeric(45)
 cp_miss_high <- numeric(45)
+boot_miss_high <- numeric(45)
 
 for (i in 1:45) {
   wald_miss_high[i] <- mean(wald_confidence_int[[i]]$lower > repeated_p[i])
   cp_miss_high[i] <- mean(cp_confidence_int[[i]]$lower > repeated_p[i])
+  boot_miss_high[i] <- mean(boot_percentile_confidence_int[[i]]$lower > repeated_p[i])
 }
 
-cp_miss_high
-wald_miss_high
 
 #Create a data frame to hold information about the Wald Interval. 
 
@@ -150,19 +178,19 @@ wald_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = wald_
 
 cp_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = cp_lengths, coverage_probs = cp_coverage_probabilities, miss_low = cp_miss_low, miss_high = cp_miss_high)
 
+boot_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_lengths, coverage_probs = boot_coverage_probabilities, miss_low = boot_miss_low, miss_high = boot_miss_high)
 
-cp_summary
-wald_summary
 
 #Summary with just n, p, and coverage probabilities.
-simplified_wald_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = coverage_probabilities)
+simplified_wald_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = wald_coverage_probabilities)
 
 simplified_cp_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = cp_coverage_probabilities)
 
+simplified_boot_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = boot_coverage_probabilities)
 
 
 library(ggplot2)
-ggplot(simplified_summary, aes(x=p, y=wald_coverage_probabilities)) +
+ggplot(simplified_wald_summary, aes(x=p, y=wald_coverage_probabilities)) +
   geom_point()+
   facet_wrap(~sample_size) + 
   labs(title = "Wald Interval Coverage Probabilities by Sample Size",
@@ -176,6 +204,13 @@ ggplot(simplified_cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
        y = "Coverage Probabilities") +
   geom_hline(yintercept = 0.95, color = "blue")
 
+
+ggplot(simplified_boot_summary, aes(x=p, y=boot_coverage_probabilities)) +
+  geom_point()+
+  facet_wrap(~sample_size) + 
+  labs(title = "Bootstrap Percentile Interval Coverage Probabilities by Sample Size",
+       y = "Coverage Probabilities") +
+  geom_hline(yintercept = 0.95, color = "blue")
 
 
 
