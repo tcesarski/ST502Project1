@@ -170,7 +170,7 @@ ggplot(simplified_summary, aes(x=p, y=wald_coverage_probabilities)) +
   geom_hline(yintercept = 0.95, color = "blue")
 
 ggplot(simplified_cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
-  geom_line()+
+  geom_point()+
   facet_wrap(~sample_size) + 
   labs(title = "Clopper Pearson Interval Coverage Probabilities by Sample Size",
        y = "Coverage Probabilities") +
