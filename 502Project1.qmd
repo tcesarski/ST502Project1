@@ -7,6 +7,7 @@ author: "Taylor Cesarski and Jie Chen"
 
 # Goals of Simulation Study
 For this study, we will utilize simulation to analyze different confidence interval methods for estimating a true probability of success (p) from a binomial random sample. We will look at the following confidence interval methods:
+
 1. Wald Interval
 2. Adjusted Wald Interval
 3. Clopper-Pearson Interval
@@ -28,7 +29,9 @@ The Wald Interval can be found using the following function:
 #Create a Wald Interval function. 
 #Let the default for alpha be 0.05.
 wald_int <- function(y, n, alpha = 0.05){
-  #Generate the lower and upper endpoints using sample proportion, critical value from standard normal distribution, and estimated standard error.
+  #Generate the lower and upper endpoints using sample proportion,
+  #critical value from standard normal distribution, and estimated standard
+  #error.
   c(y/n -qnorm(1-alpha/2)*sqrt(((y/n)*(1-y/n))/n),
     y/n +qnorm(1-alpha/2)*sqrt(((y/n)*(1-y/n))/n))
 }
@@ -73,7 +76,7 @@ bootstrap_int <- function(y, n, alpha =0.05){
     boot_sample <- rbinom(1, size = n, prob = phat)
     boot_phat <- boot_sample/n
   })
-  #Return the 2.5th quantile and 97.5th quantile of bootstrap distribution as the confidence interval.
+  #Return the 2.5th quantile and 97.5th quantile of bootstrap distribution.
 return(c(quantile(boot_estimates, 0.025), quantile(boot_estimates, 0.975)))
 }
 ```
@@ -89,7 +92,8 @@ set.seed(200)
 #Create a vector of sample sizes.
 sample_sizes <- c(15, 30, 100)
 #Create a vector of 15 values of p ranging from 0.01 to 0.99.
-p <- c(0.01, 0.05, 0.10, 0.20, 0.25, 0.35, 0.45, 0.5, 0.6, 0.65, 0.75, 0.8, 0.9, 0.95, 0.99)
+p <- c(0.01, 0.05, 0.10, 0.20, 0.25, 0.35, 0.45, 0.5, 0.6, 
+       0.65, 0.75, 0.8, 0.9, 0.95, 0.99)
 
 #Initalize lists to store each data frame of CIs.
 wald_confidence_int <- list()
@@ -133,7 +137,8 @@ for(i in 1:1000){
   #Store each data frame in the list with names.
   wald_confidence_int[[paste0("Wald", "size_", size, "prob_", prob)]] <- wald_CIs
   cp_confidence_int[[paste0("Clopper-Pearson", "size_", size, "prob_", prob)]] <- cp_CIs
-  boot_percentile_confidence_int[[paste0("Bootstrap Percentile", "size_", size, "prob_", prob)]] <- boot_CIs
+  boot_percentile_confidence_int[[paste0("Bootstrap Percentile", "size_", size,
+                                         "prob_", prob)]] <- boot_CIs
   }
 }
 
@@ -148,17 +153,29 @@ We will create a data frame for the each type of interval that contains the samp
 wald_lengths <- numeric(45)
 cp_lengths <- numeric(45)
 boot_lengths <- numeric(45)
-wald_se <- numeric(45)
 
 #Use a for loop to calculate the average lengths for each set of 1000 intervals. 
 for(i in 1:45){
   wald_lengths[i] <- mean(wald_confidence_int[[i]]$upper - wald_confidence_int[[i]]$lower)
-  wald_se[i] <- sd(wald_confidence_int[[i]]$upper - wald_confidence_int[[i]]$lower)
   cp_lengths[i] <- mean(cp_confidence_int[[i]]$upper - cp_confidence_int[[i]]$lower)
   boot_lengths[i] <- mean(boot_percentile_confidence_int[[i]]$upper - boot_percentile_confidence_int[[i]]$lower)
-  
 }
 
+#Initialize numeric vectors of size 45 to hold standard errors.
+wald_se <- numeric(45)
+cp_se <- numeric(45)
+boot_se <- numeric(45)
+
+#Use a for loop to calculate the standard errors of average lengths
+#for each set of 1000 intervals.
+for(i in 1:45){
+  wald_se[i] <- sd((wald_confidence_int[[i]]$upper -
+                      wald_confidence_int[[i]]$lower))
+  cp_se[i] <- sd((cp_confidence_int[[i]]$upper - 
+                    cp_confidence_int[[i]]$lower))
+  boot_se[i] <- sd((boot_percentile_confidence_int[[i]]$upper -
+                      boot_percentile_confidence_int[[i]]$lower))
+}
 
 #Create a vector that contains the probabilities 3 times.
 repeated_p <- rep(p, 3)
@@ -171,14 +188,22 @@ boot_coverage_probabilities <- numeric(45)
 
 #Use a for loop to calculate the coverage probability (% containing true p) for each set of 1000 intervals.
 for (i in 1:45) {
-  wald_coverage_probabilities[i] <- mean(wald_confidence_int[[i]]$upper > repeated_p[i] & wald_confidence_int[[i]]$lower < repeated_p[i])
-  cp_coverage_probabilities[i] <- mean(cp_confidence_int[[i]]$upper > repeated_p[i] & cp_confidence_int[[i]]$lower < repeated_p[i])
-  boot_coverage_probabilities[i] <- mean(boot_percentile_confidence_int[[i]]$upper > repeated_p[i] & boot_percentile_confidence_int[[i]]$lower < repeated_p[i])
+  wald_coverage_probabilities[i] <- 
+    mean(wald_confidence_int[[i]]$upper > repeated_p[i] &
+           wald_confidence_int[[i]]$lower < repeated_p[i])
+  
+  cp_coverage_probabilities[i] <- 
+    mean(cp_confidence_int[[i]]$upper > repeated_p[i] &
+           cp_confidence_int[[i]]$lower < repeated_p[i])
+  
+  boot_coverage_probabilities[i] <-
+    mean(boot_percentile_confidence_int[[i]]$upper > repeated_p[i] &
+           boot_percentile_confidence_int[[i]]$lower < repeated_p[i])
 }
 
 
 
-#Initalize numeric vectors of length 45 to store the percentage of intervals missing too low.
+#Initialize numeric vectors to store the percentage of intervals missing low.
 wald_miss_low <- numeric(45)
 cp_miss_low <- numeric(45)
 boot_miss_low <- numeric(45)
@@ -190,7 +215,7 @@ for (i in 1:45) {
   boot_miss_low[i] <- mean(boot_percentile_confidence_int[[i]]$upper < repeated_p[i])
 }
 
-#Initalize numeric vectors of length 45 to store the percentage of intervals missing too high.
+#Initalize numeric vectors to store the percentage of intervals missing high.
 wald_miss_high <- numeric(45)
 cp_miss_high <- numeric(45)
 boot_miss_high <- numeric(45)
@@ -211,21 +236,31 @@ n_values <- c(rep(15,15), rep(30, 15), rep(100,15))
 repeated_p <- rep(p, 3)
 
 #Store the n, p, lengths, coverage probabilities, and % missing above and below.
-wald_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = wald_lengths, coverage_probs = wald_coverage_probabilities, miss_low = wald_miss_low, miss_high = wald_miss_high)
+wald_summary <- data.frame(n = n_values, 
+                           p = repeated_p, 
+                           avg_int_lengths = wald_lengths,
+                           st_errors = wald_se,
+                           coverage_probs = wald_coverage_probabilities,
+                           miss_low = wald_miss_low, 
+                           miss_high = wald_miss_high)
 
 head(wald_summary)
 
-cp_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = cp_lengths, coverage_probs = cp_coverage_probabilities, miss_low = cp_miss_low, miss_high = cp_miss_high)
+cp_summary <- data.frame(n = n_values, 
+                         p = repeated_p, 
+                         avg_int_lengths = cp_lengths, 
+                         st_errors = cp_se,
+                         coverage_probs = cp_coverage_probabilities, 
+                         miss_low = cp_miss_low, 
+                         miss_high = cp_miss_high)
 
-boot_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_lengths, coverage_probs = boot_coverage_probabilities, miss_low = boot_miss_low, miss_high = boot_miss_high)
-
-
-#Summary with just n, p, and coverage probabilities.
-simplified_wald_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = wald_coverage_probabilities, average_lengths = wald_lengths)
-
-simplified_cp_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = cp_coverage_probabilities, average_lengths = cp_lengths)
-
-simplified_boot_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = boot_coverage_probabilities, average_lengths = boot_lengths)
+boot_summary <- data.frame(n = n_values, 
+                           p = repeated_p, 
+                           avg_int_lengths = boot_lengths, 
+                           st_errors = boot_se,
+                           coverage_probs = boot_coverage_probabilities,
+                           miss_low = boot_miss_low, 
+                           miss_high = boot_miss_high)
 ```
 
 ```{r, include = FALSE}
@@ -237,11 +272,11 @@ library(ggplot2)
 The plot for the Wald Interval shows that the convergence probabilities are missing under the desired 95% for almost all values of p when n=15. When n=30, five values appear very close to the 95% convergence probability, but most are still too low on convergence, with only one having more than 95% of the intervals capture the true p. When n=100, the convergence probability seems good for values of p between approximately 0.2 and 0.9, but still doesn't perform well for extreme values of p towards 0 or 1. This concept makes sense because the Wald Interval is based on the CLT which holds for large samples. 
 
 ```{r}
-ggplot(simplified_wald_summary, aes(x=p, y=wald_coverage_probabilities)) +
+ggplot(wald_summary, aes(x=p, y=wald_coverage_probabilities)) +
   #Use point graph to make easier to see differences.
   geom_point()+
   #Facet wrap over sample size to compare plots for different sample sizes.
-  facet_wrap(~sample_size) + 
+  facet_wrap(~n) + 
   #Add title for overall plot and y axis.
   labs(title = "Wald Interval Coverage Probabilities by Sample Size",
        y = "Coverage Probabilities") +
@@ -252,13 +287,13 @@ ggplot(simplified_wald_summary, aes(x=p, y=wald_coverage_probabilities)) +
 
 The plot for the Clopper-Pearson Interval shows that the convergence probabilities perform much better for smaller sample sizes compared to the Wald Interval. This is due to the fact that the Clopper-Pearson is an exact interval and does not rely on asymptotic normality. Even at n=100, the Clopper-Pearson Interval is still not ideal for extreme values of p (0.01 and 0.99) and more conservative values of p when n is smaller. The Clopper-Pearson Interval also "overhits" the target in most cases, with convergence probabilities above the 95% ideal convergence probability. 
 ```{r}
-ggplot(simplified_cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
+ggplot(cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
   #Use point graph to make easier to see differences.
   geom_point()+
   #Facet wrap over sample size to compare plots for different sample sizes.
-  facet_wrap(~sample_size) + 
+  facet_wrap(~n) + 
   #Add title for overall plot and y axis.
-  labs(title = "Clopper Pearson Interval Coverage Probabilities by Sample Size",
+  labs(title = "Clopper-Pearson Interval Coverage Probs by Sample Size",
        y = "Coverage Probabilities") +
   #Add a line at the idea convergence probability for clarity.
   geom_hline(yintercept = 0.95, color = "blue")
@@ -268,13 +303,13 @@ ggplot(simplified_cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
 The raw percentile interval using a parametric bootstrap misses the ideal convergence probability for every sample size and value of p. When n=100, it gets relatively close, but all of the convergence probabilities still lie under 95%. Over all values of n, the raw percentile interval method performs very poorly for extreme values of p towards 0 and 1.
 ```{r}
 #Bootstrap Percentile Coverage Probability Plot
-ggplot(simplified_boot_summary, aes(x=p, y=boot_coverage_probabilities)) +
+ggplot(boot_summary, aes(x=p, y=boot_coverage_probabilities)) +
   #Use point graph to make easier to see differences.
   geom_point()+
   #Facet wrap over sample size to compare plots for different sample sizes.
-  facet_wrap(~sample_size) + 
+  facet_wrap(~n) + 
   #Add title for overall plot and y axis.
-  labs(title = "Bootstrap Percentile Interval Coverage Probabilities by Sample Size",
+  labs(title = "Bootstrap Percentile Interval Coverage Probs by Sample Size",
        y = "Coverage Probabilities") +
   #Add a line at the idea convergence probability for clarity.
   geom_hline(yintercept = 0.95, color = "blue")
@@ -284,21 +319,21 @@ ggplot(simplified_boot_summary, aes(x=p, y=boot_coverage_probabilities)) +
 As the sample size increases for the wald interval, the average lengths of the intervals decreases. For n=15, the average length peaks when p is around 0.5 to an average length of about 0.5 For n=30, the average length peaks when p is around 0.5 to an average length of about 0.35. For n=100, the average length peaks when p is around 0.5 to an average length of about 0.2.
 
 ```{r}
-ggplot(simplified_wald_summary, aes(x=p, y=wald_lengths)) +
+ggplot(wald_summary, aes(x=p, y=wald_lengths)) +
   geom_line()+
-  facet_wrap(~sample_size) + 
+  facet_wrap(~n) + 
   labs(title = "Wald Interval Average Lengths by Sample Size",
        y = "Average Lengths")
 ```
 ### Clopper-Pearson Average Lengths Plots
 
-As the sample size increases for the Clopper-Pearson interval, the average lengths of the intervals decreases. For n=15, the average length peaks when p is around 0.5 to an average length of about 0.52 For n=30, the average length peaks when p is around 0.5 to an average length of about 0.36. For n=100, the average length peaks when p is around 0.5 to an average length of about 0.2.
+As the sample size increases for the Clopper-Pearson interval, the average lengths of the intervals decreases. For n=15, the average length peaks when p is around 0.5 to an average length of about 0.5 For n=30, the average length peaks when p is around 0.5 to an average length of about 0.36. For n=100, the average length peaks when p is around 0.5 to an average length of about 0.2.
 
 ```{r}
 #Clopper-Pearson Average Lengths Plot
-ggplot(simplified_wald_summary, aes(x=p, y=cp_lengths)) +
+ggplot(cp_summary, aes(x=p, y=cp_lengths)) +
   geom_line()+
-  facet_wrap(~sample_size) + 
+  facet_wrap(~n) + 
   labs(title = "Clopper-Pearson Interval Average Lengths by Sample Size",
        y = "Average Lengths")
 ```
@@ -310,9 +345,9 @@ As the sample size increases for the Raw Percentile Interval, the average length
 
 ```{r}
 #Bootstrap Percentile Interval Average Lengths Plot
-ggplot(simplified_boot_summary, aes(x=p, y=boot_lengths)) +
+ggplot(boot_summary, aes(x=p, y=boot_lengths)) +
   geom_line()+
-  facet_wrap(~sample_size) + 
+  facet_wrap(~n) + 
   labs(title = "Bootstrap Percentile Interval Average Lengths by Sample Size",
        y = "Average Lengths")
 ```
