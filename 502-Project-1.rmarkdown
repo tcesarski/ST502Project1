@@ -192,7 +192,7 @@ bootstrap_int <- function(y, n, alpha =0.05, B=100) {
   # bootstrap sample proportions
   boot_phats <- boot_estimates[1, ]  
     
-  #  t-statistics,filter out NA, Inf, and -Inf values
+  #  t-statistics, remove NA, Inf, and -Inf values
   t_stats <- boot_estimates[2, ]
   t_stats <- t_stats[!is.na(t_stats) & is.finite(t_stats)]
   
@@ -201,28 +201,17 @@ bootstrap_int <- function(y, n, alpha =0.05, B=100) {
   upper_percentile <- quantile(boot_phats, 1 - alpha / 2, na.rm=TRUE)
   
   # Calculate the critical values (percentiles of the t-statistics)
-  if (length(t_stats >0) ) {
-    lower_t_percentile <- quantile(t_stats, alpha / 2, na.rm=TRUE)
-    upper_t_percentile <- quantile(t_stats, 1 - alpha / 2, na.rm=TRUE)
-  } else {
-    # If there are no valid t-statistics, fallback to NA or some default
-    lower_t_percentile <- NA
-    upper_t_percentile <- NA
-  }
-  
+  lower_t_percentile <- quantile(t_stats, alpha / 2, na.rm=TRUE)
+  upper_t_percentile <- quantile(t_stats, 1 - alpha / 2, na.rm=TRUE)
+
   # Calculate the standard error of the original sample proportion
   se_phat <- sqrt(phat * (1 - phat) / n)
   
-  # Calculate the bootstrap t-interval if the t-statistics are valid
-  if (!is.na(lower_t_percentile) & !is.na(upper_t_percentile)) {
-    lower_boot_t <- phat - upper_t_percentile * se_phat
-    upper_boot_t <- phat - lower_t_percentile * se_phat
-  } else {
-    lower_boot_t <- NA
-    upper_boot_t <- NA
-  }
+  # Calculate the bootstrap t-interval 
+  lower_boot_t <- phat - upper_t_percentile * se_phat
+  upper_boot_t <- phat - lower_t_percentile * se_phat
 
-  
+
   # Return both intervals as a list
   return(list(
     bootstrap_per_interval = c(lower_percentile, upper_percentile),
@@ -404,7 +393,7 @@ for(i in 1:45){
   wald_se[i] <- sd(wald_confidence_int[[i]]$upper - wald_confidence_int[[i]]$lower)
   
   adjusted_wald_lengths[i] <- mean(adjusted_wald_CI[[i]]$upper - adjusted_wald_CI[[i]]$lower)
-  
+   
   cp_lengths[i] <- mean(cp_confidence_int[[i]]$upper - cp_confidence_int[[i]]$lower)
   
   score_lengths[i] <- mean(score_CI[[i]]$upper - score_CI[[i]]$lower)
@@ -671,6 +660,8 @@ ggplot(simplified_cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
 
 ### Score Interval
 
+The curve below dip below 0.95 when p gets closer to 1, but not as drastically as it does for the Wald interval. The score interval tends to avoid the severe under-coverage that the Wald interval suffers from in these regions. In addition, for smaller sample sizes, the plot may show more variability, but the score interval still perform better than the Wald interval.
+
 ```{r}
 ggplot(simplified_score_summary, aes(x = p, y = score_coverage_probabilities)) +
   
@@ -727,6 +718,9 @@ ggplot(simplified_boot_per_summary, aes(x=p, y=boot_per_coverage_probabilities))
 
 ### Bootstrap t interval using a parametric bootstrap
 
+From the below plot, we see that the coverage probability mostly close to the 0.95 line, indicating that the intervals provide accurate estimates of the true parameter. Bootstrap t interval performs well in capturing the true proportion 
+p about 95% of the time.
+
 ```{r}
 ggplot(simplified_boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities)) +
   
@@ -738,7 +732,7 @@ ggplot(simplified_boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities))
   facet_wrap(~sample_size, labeller = labeller(sample_size = function(x) paste("n =", x))) +
   
   # Add title for overall plot and y axis.
-  labs(title = "Bootstrap Interval Coverage Probabilities by Sample Size",
+  labs(title = "Bootstrap T Interval Coverage Probabilities by Sample Size",
        y = "Coverage Probabilities",
        x = "p") +
   
@@ -768,6 +762,23 @@ ggplot(simplified_wald_summary, aes(x=p, y=wald_lengths)) +
        y = "Average Lengths")
 
 ```
+
+### Adjusted Wald Average Lengths Plots
+
+```{r}
+ggplot(simplified_adjusted_wald_summary, aes(x=p, y=adjusted_wald_lengths)) +
+
+  geom_line()+
+
+  facet_wrap(~sample_size) + 
+
+  labs(title = "Adjusted Wald Interval Average Lengths by Sample Size",
+
+       y = "Average Lengths")
+
+```
+
+
 
 ### Clopper-Pearson Average Lengths Plots
 
@@ -808,3 +819,43 @@ ggplot(simplified_boot_per_summary, aes(x=p, y=boot_per_lengths)) +
        y = "Average Lengths")
 
 ```
+
+
+### Bootstrap T interval Average Lengths
+
+```{r}
+#Bootstrap T Interval Average Lengths Plot
+
+ggplot(simplified_boot_t_summary, aes(x=p, y=boot_t_lengths)) +
+
+  geom_line()+
+
+  facet_wrap(~sample_size) + 
+
+  labs(title = "Bootstrap T Interval Average Lengths by Sample Size",
+
+       y = "Average Lengths")
+
+```
+
+
+### Standard Errors of these average lengths
+
+```{r}
+
+sd_wald <-sd(wald_lengths,na.rm=TRUE) 
+sd_wald
+sd_adjusted_wald<- sd(adjusted_wald_lengths,na.rm=TRUE)
+sd_adjusted_wald
+sd_cp <- sd(cp_lengths,na.rm=TRUE)
+sd_cp
+sd_score <- sd(score_lengths,na.rm=TRUE)
+sd_score
+sd_boot_per <-sd(boot_per_lengths,na.rm=TRUE)
+sd_boot_per
+sd_boot_t <-sd(boot_t_lengths, na.rm=TRUE)
+sd_boot_t
+
+
+```
+
