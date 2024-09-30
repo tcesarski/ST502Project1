@@ -145,9 +145,11 @@ scoreCI <- function(y, n, alpha = 0.05) {
 }
 ```
 
+
 ### Raw Percentile Interval using a Parametric Bootstrap
 
 The fifth method we will examine is a raw percentile interval using a parametric bootstrap. The idea of a parametric bootstrap is to resample from a fitted distribution to get many samples of the same size (that correspond to the original sample size). Then find the bootstrap estimate (in this case the sample proportion) and generate the bootstrap distribution. Finally, we will use the (1-$\alpha$/2) and $\alpha$/2 quantiles from this bootstrap distribution as the confidence interval.
+
 
 ### Method 6: Bootstrap t interval using a parametric bootstrap
 
@@ -211,7 +213,6 @@ bootstrap_int <- function(y, n, alpha =0.05, B=100) {
   # Calculate the standard error of the original sample proportion
   se_phat <- sqrt(phat * (1 - phat) / n)
   
-  # Calculate the bootstrap t-interval
   # Calculate the bootstrap t-interval if the t-statistics are valid
   if (!is.na(lower_t_percentile) & !is.na(upper_t_percentile)) {
     lower_boot_t <- phat - upper_t_percentile * se_phat
@@ -247,13 +248,14 @@ set.seed(200)
 
 sample_sizes <- c(15, 30, 100)
 
-#Create a vector of 15 values of p ranging from 0.01 to 0.99.
+# Create a vector of 15 values of p ranging from 0.01 to 0.99
+p <- seq(0.01, 0.99, length.out = 15)
 
-p <- c(0.01, 0.05, 0.10, 0.20, 0.25, 0.35, 0.45, 0.5, 0.6, 0.65, 0.75, 0.8, 0.9, 0.95, 0.99)
+# Print the vector
+print(p)
 
 
-
-#Initalize lists to store each data frame of CIs.
+# Initialize lists to store each data frame of CIs.
 
 wald_confidence_int <- list() 
 
@@ -337,11 +339,9 @@ for(i in 1:1000){
   scoreCIs$upper[i] <- score_interval[2]
   
 
-  #Apply the bootstrap_int function and store the lower & upper endpoint.
+  #Apply the bootstrap_int function and store the lower & upper endpoint for both methods.
 
   boot_interval <- bootstrap_int(y, size)
-
-  
 
   boot_perCIs$lower[i] <- boot_interval$bootstrap_per_interval[1]
 
@@ -368,7 +368,6 @@ for(i in 1:1000){
   boot_t_CI[[paste0("Bootstrap t interval", "size_", size, "prob_", prob)]] <- boot_tCIs
 
   }
-
 }
 
 ```
@@ -406,7 +405,6 @@ for(i in 1:45){
   
   adjusted_wald_lengths[i] <- mean(adjusted_wald_CI[[i]]$upper - adjusted_wald_CI[[i]]$lower)
   
-
   cp_lengths[i] <- mean(cp_confidence_int[[i]]$upper - cp_confidence_int[[i]]$lower)
   
   score_lengths[i] <- mean(score_CI[[i]]$upper - score_CI[[i]]$lower)
@@ -418,10 +416,7 @@ for(i in 1:45){
 }
 
 
-
-
-
-#Create a vector that contains the probabilities 3 times.
+# Create a vector that contains the probabilities 3 times.
 
 repeated_p <- rep(p, 3)
 
@@ -513,7 +508,7 @@ boot_t_miss_high <- numeric(45)
 
 
 
-#Find the percentage where the true p is below the interval.
+# Find the percentage where the true p is below the interval.
 
 for (i in 1:45) {
 
@@ -530,9 +525,6 @@ for (i in 1:45) {
   boot_t_miss_high[i] < mean(boot_t_CI[[i]]$lower > repeated_p[i])
 
 }
-
-
-
 
 
 #Create a data frame to hold information about the Wald Interval. 
@@ -564,9 +556,8 @@ cp_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = cp_leng
 score_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = score_lengths, coverage_probs = score_coverage_probabilities, miss_low = score_miss_low, miss_high = score_miss_high)
 
 
-# boot_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_lengths, coverage_probs = boot_coverage_probabilities, miss_low = boot_miss_low, miss_high = boot_miss_high)
-
 boot_per_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_per_lengths, coverage_probs = boot_per_coverage_probabilities, miss_low = boot_per_miss_low, miss_high = boot_per_miss_high)
+
 
 boot_t_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_t_lengths, coverage_probs = boot_t_coverage_probabilities, miss_low = boot_t_miss_low, miss_high = boot_t_miss_high)
 
@@ -624,6 +615,32 @@ ggplot(simplified_wald_summary, aes(x=p, y=wald_coverage_probabilities)) +
 
 ### Adjusted Wald Coverage Probability Plot
 
+The plot below for Adjusted Wald coverage probability shows that as the sample size increases from 15 to 100, the curve moves closer to the 0.95 reference line, indicating better performance. However, even for the small sample size of 15, the Adjusted Wald method still outperforms the standard Wald method. Overall, the Adjusted Wald confidence intervals perform adequately for practical applications across essentially any sample size (Agresti & Coull, 1998, p. 124).
+
+```{r}
+ggplot(simplified_adjusted_wald_summary, aes(x = p, y = adjusted_wald_coverage_probabilities)) +
+  
+  # Use a line graph to create a curve
+  geom_line(color = "black") +
+  
+  # Facet wrap over sample size to compare plots for different sample sizes, 
+  # use labeller to show n = n_values in the strip labels
+  facet_wrap(~sample_size, labeller = labeller(sample_size = function(x) paste("n =", x))) +
+  
+  # Add title for overall plot and y axis.
+  labs(title = "Adjusted Wald Interval Coverage Probabilities by Sample Size",
+       y = "Coverage Probabilities",
+       x = "p") +
+  
+  ylim (0.7,1) +
+  
+  # Add a line at the ideal coverage probability (0.95) for clarity.
+  geom_hline(yintercept = 0.95, color = "blue") 
+  
+
+```
+
+
 ### Clopper Pearson Coverage Probability Plot
 
 The plot for the Clopper-Pearson Interval shows that the convergence probabilities perform much better for smaller sample sizes compared to the Wald Interval. This is due to the fact that the Clopper-Pearson is an exact interval and does not rely on asymptotic normality. Even at n=100, the Clopper-Pearson Interval is still not ideal for extreme values of p (0.01 and 0.99) and more conservative values of p when n is smaller. The Clopper-Pearson Interval also "overhits" the target in most cases, with convergence probabilities above the 95% ideal convergence probability.
@@ -651,6 +668,31 @@ ggplot(simplified_cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
   geom_hline(yintercept = 0.95, color = "blue")
 
 ```
+
+### Score Interval
+
+```{r}
+ggplot(simplified_score_summary, aes(x = p, y = score_coverage_probabilities)) +
+  
+  # Use a line graph to create a curve
+  geom_line(color = "black") +
+  
+  # Facet wrap over sample size to compare plots for different sample sizes, 
+  # use labeller to show n = n_values in the strip labels
+  facet_wrap(~sample_size, labeller = labeller(sample_size = function(x) paste("n =", x))) +
+  
+  # Add title for overall plot and y axis.
+  labs(title = "Score Interval Coverage Probabilities by Sample Size",
+       y = "Coverage Probabilities",
+       x = "p") +
+  
+  ylim (0.7,1) +
+  
+  # Add a line at the ideal coverage probability (0.95) for clarity.
+  geom_hline(yintercept = 0.95, color = "blue") 
+  
+```
+
 
 ### Raw Percentile Interval using a Parametric Bootstrap
 
@@ -681,6 +723,33 @@ ggplot(simplified_boot_per_summary, aes(x=p, y=boot_per_coverage_probabilities))
   geom_hline(yintercept = 0.95, color = "blue")
 
 ```
+
+
+### Bootstrap t interval using a parametric bootstrap
+
+```{r}
+ggplot(simplified_boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities)) +
+  
+  # Use a line graph to create a curve
+  geom_line(color = "black") +
+  
+  # Facet wrap over sample size to compare plots for different sample sizes, 
+  # use labeller to show n = n_values in the strip labels
+  facet_wrap(~sample_size, labeller = labeller(sample_size = function(x) paste("n =", x))) +
+  
+  # Add title for overall plot and y axis.
+  labs(title = "Bootstrap Interval Coverage Probabilities by Sample Size",
+       y = "Coverage Probabilities",
+       x = "p") +
+  
+  ylim (0.7,1) +
+  
+  # Add a line at the ideal coverage probability (0.95) for clarity.
+  geom_hline(yintercept = 0.95, color = "blue") 
+  
+```
+
+
 
 ### Wald Interval Average Lengths Plot.
 
