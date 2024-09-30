@@ -1,4 +1,4 @@
----
+------------------------------------------------------------------------
 
 title: "ST 502 Project 1"
 
@@ -6,8 +6,7 @@ format: pdf
 
 author: "Taylor Cesarski and Jie Chen"
 
----
-
+------------------------------------------------------------------------
 
 ```{r}
 
@@ -15,49 +14,31 @@ pdf(width = 9, height = 9)
 
 ```
 
-
-
-
-
-
 # Goals of Simulation Study
 
 For this study, we will utilize simulation to analyze different confidence interval methods for estimating a true probability of success (p) from a binomial random sample. We will look at the following confidence interval methods:
 
-1. Wald Interval
+1.  Wald Interval
 
-2. Adjusted Wald Interval
+2.  Adjusted Wald Interval
 
-3. Clopper-Pearson Interval
+3.  Clopper-Pearson Interval
 
-4. Score Interval
+4.  Score Interval
 
-5. Raw Percentile Interval using a Parametric Bootstrap
+5.  Raw Percentile Interval using a Parametric Bootstrap
 
-6. Bootstrap T Interval using a Parametric Bootstrap
-
-
+6.  Bootstrap T Interval using a Parametric Bootstrap
 
 To determine the best method, we will use simulation to generate many confidence intervals at varying sample sizes and probabilities of success. From there, we will look at the average length of these intervals, the standard errors of these lengths, the observed coverage probability, and the percentage of intervals that are missing below the true proportion and the percentage of intervals that are missing above the true proportion.
 
-
-
-
-
 # Methods Used & Calculations
-
-
 
 ### Wald Interval
 
 The first method we will examine is the Wald Interval. The Wald interval is often presented in introductory statistics courses as the method used to calculate a confidence interval for a sample proportion. It relies on the Central Limit Theorem and estimates the standard error with use of the sample proportion instead of the true proportion (since this in theory would be unknown). We generate this interval by taking the sample proportion and adding and subtracting the critical value from the standard normal distribution multiplied by the estimated standard error.
 
-
-
 The Wald Interval can be found using the following function:
-
-
-
 
 ```{r}
 
@@ -77,12 +58,12 @@ wald_int <- function(y, n, alpha = 0.05){
 
 ```
 
-
 ### Method 2. Adjusted Wald Interval
 
-Because of the poor performance of the Wald interval for small samples or extreme p values, Adjusted Wald Interval is introduced as an improvement for estimating a Binomial proportion. The Adjusted Wald interval can be calculated by 'adding two successes and two failures and then use the Wald formula'. Define the adjusted proportion: p_hat=(X+2)/(n+4) and the adjusted sample size: n+4. The adjusted wald interval is p_hat +/- z_2/alpha * estimated standard error.
+Because of the poor performance of the Wald interval for small samples or extreme p values, Adjusted Wald Interval is introduced as an improvement for estimating a Binomial proportion. The Adjusted Wald interval can be calculated by 'adding two successes and two failures and then use the Wald formula'. Define the adjusted proportion: p_hat=(X+2)/(n+4) and the adjusted sample size: n+4. The adjusted wald interval is p_hat +/- z_2/alpha \* estimated standard error.
 
 Function for Adjusted Wald Interval Calculation
+
 ```{r}
 adjusted_waldCI <- function (y, n, alpha=0.05){
   c((y+2)/(n+4) - qnorm(1-alpha/2)*sqrt(((y+2)/(n+4))*(1-((y+2)/(n+4)))/(n+4)),
@@ -90,7 +71,6 @@ adjusted_waldCI <- function (y, n, alpha=0.05){
 }
 
 ```
-
 
 ### Clopper-Pearson Interval
 
@@ -136,9 +116,10 @@ CP_int <- function(y, n, alpha = 0.05){
 
 ### Method 4: Score Interval
 
-Score interval is an improvement over the Wald interval, providing better performance, especially for small sample sizes or proportions near 0 or 1. It also performs much better than the exact intervals. The center of score interval is the weighted average (p_hat + z^2 /2n)/(1 + z^2/n). The estimated standard error will be sqrt(p_hat*(1-p_hat)/n + z^2/4n^2).
+Score interval is an improvement over the Wald interval, providing better performance, especially for small sample sizes or proportions near 0 or 1. It also performs much better than the exact intervals. The center of score interval is the weighted average (p_hat + z\^2 /2n)/(1 + z\^2/n). The estimated standard error will be sqrt(p_hat\*(1-p_hat)/n + z^2/4n^2).
 
 Create a function that calculates and returns the Score interval
+
 ```{r}
 # Score Interval Function 
 scoreCI <- function(y, n, alpha = 0.05) {
@@ -164,65 +145,97 @@ scoreCI <- function(y, n, alpha = 0.05) {
 }
 ```
 
-
-
 ### Raw Percentile Interval using a Parametric Bootstrap
 
 The fifth method we will examine is a raw percentile interval using a parametric bootstrap. The idea of a parametric bootstrap is to resample from a fitted distribution to get many samples of the same size (that correspond to the original sample size). Then find the bootstrap estimate (in this case the sample proportion) and generate the bootstrap distribution. Finally, we will use the (1-$\alpha$/2) and $\alpha$/2 quantiles from this bootstrap distribution as the confidence interval.
 
+### Method 6: Bootstrap t interval using a parametric bootstrap
 
+The parametric bootstrap t-interval is based on resampling from this specific parametric distribution to estimate the statistic’s variability and the confidence interval. We will need to first fit a parametric model to our data (here is a binomial distribution). Then, we generate bootstrap samples from the fitted distribution (rather than resampling directly from the observed data). For each bootstrap sample, compute the bootstrap estimate (e.g., sample proportion) and bootstrap standard error of the statistic. Use the bootstrap t-statistic, to compute the percentiles of the t-statistics from the bootstrap samples to find the appropriate cutoff points for the confidence interval.
 
+We will create one function that finds the two bootstrap based intervals for saving computational time.
 
 ```{r}
-
 #Create a bootstrap interval function. 
 
 #Let the default for alpha be 0.05.
 
-bootstrap_int <- function(y, n, alpha =0.05){
+bootstrap_int <- function(y, n, alpha =0.05, B=100) {
 
   #Calculate the sample proportion.
-
   phat <- y/n
 
-  
-
   #Get 100 resamples of size n and compute the sample proportion for each.
-
-  boot_estimates <- replicate(100,{
+  boot_estimates <- replicate(B,{
 
     boot_sample <- rbinom(1, size = n, prob = phat)
 
     boot_phat <- boot_sample/n
-
+    
+    # Check for extreme cases where boot_phat is 0 or 1 (leading to Inf t-statistics)
+    if (boot_phat == 0 || boot_phat == 1) {
+      return(c(NA, NA))  
+    }
+    
+    # bootstrap t interval for standard error
+    se_boot <- sqrt(boot_phat*(1-boot_phat)/n)
+   
+    # calculate t_statistic
+    t_stat <-(boot_phat - phat)/se_boot
+    
+    # return bootstrap sample proportion and t-statistic
+    return(c(boot_phat, t_stat))
   })
+   
+  # bootstrap sample proportions
+  boot_phats <- boot_estimates[1, ]  
+    
+  #  t-statistics,filter out NA, Inf, and -Inf values
+  t_stats <- boot_estimates[2, ]
+  t_stats <- t_stats[!is.na(t_stats) & is.finite(t_stats)]
+  
+  # Calculate the raw percentile interval
+  lower_percentile <- quantile(boot_phats, alpha / 2, na.rm=TRUE)
+  upper_percentile <- quantile(boot_phats, 1 - alpha / 2, na.rm=TRUE)
+  
+  # Calculate the critical values (percentiles of the t-statistics)
+  if (length(t_stats >0) ) {
+    lower_t_percentile <- quantile(t_stats, alpha / 2, na.rm=TRUE)
+    upper_t_percentile <- quantile(t_stats, 1 - alpha / 2, na.rm=TRUE)
+  } else {
+    # If there are no valid t-statistics, fallback to NA or some default
+    lower_t_percentile <- NA
+    upper_t_percentile <- NA
+  }
+  
+  # Calculate the standard error of the original sample proportion
+  se_phat <- sqrt(phat * (1 - phat) / n)
+  
+  # Calculate the bootstrap t-interval
+  # Calculate the bootstrap t-interval if the t-statistics are valid
+  if (!is.na(lower_t_percentile) & !is.na(upper_t_percentile)) {
+    lower_boot_t <- phat - upper_t_percentile * se_phat
+    upper_boot_t <- phat - lower_t_percentile * se_phat
+  } else {
+    lower_boot_t <- NA
+    upper_boot_t <- NA
+  }
 
-  #Return the 2.5th quantile and 97.5th quantile of bootstrap distribution as the confidence interval.
-
-return(c(quantile(boot_estimates, 0.025), quantile(boot_estimates, 0.975)))
-
-}
-
+  
+  # Return both intervals as a list
+  return(list(
+    bootstrap_per_interval = c(lower_percentile, upper_percentile),
+    bootstrap_t_interval = c(lower_boot_t, upper_boot_t)
+    ))
+  
+}  
 ```
-
-### Method 6: Bootstrap t interval using a parametric bootstrap
-
-```{r}
-
-```
-
-
 
 # Creation of Data Process and Code
 
-
-
 We want to generate 1000 random samples from a binomial where n varies across n=15, 30, and 100 and p values from 0.01 to 0.99 for 15 total values of p for a total of 45 combinations. We will then generate 1000 95% confidence intervals for each of our combinations and find properties of these confidence intervals. In order for a confidence interval to be "good", we want the observed coverage probability to be equal to or close to (1-$\alpha$). Some intervals will inherently miss where the true probability falls below or above the interval. Ideally, we would want these proportions that miss on both sides to be equal to $\alpha/2$. We also want a relatively narrow interval so that it gives us helpful information. For example, it is not helpful to say the true probability is between 0 and 1 or even 0.05 and 0.95 because the interval is too wide to even be beneficial. Therefore, we want to compare the average lengths of our intervals.
 
-
-
-We will start by generating the 1000 confidence intervals for each method. 
-
+We will start by generating the 1000 confidence intervals for each method.
 
 ```{r}
 
@@ -242,13 +255,17 @@ p <- c(0.01, 0.05, 0.10, 0.20, 0.25, 0.35, 0.45, 0.5, 0.6, 0.65, 0.75, 0.8, 0.9,
 
 #Initalize lists to store each data frame of CIs.
 
-wald_confidence_int <- list()
+wald_confidence_int <- list() 
+
+adjusted_wald_CI <- list()
 
 cp_confidence_int <- list()
 
-boot_percentile_confidence_int <- list()
+score_CI <-list()
 
+boot_per_CI <- list()
 
+boot_t_CI <- list()  
 
 #Iterate through all sample sizes.
 
@@ -261,10 +278,16 @@ for(size in sample_sizes){
   #Intialize data frames to store the confidence intervals.
 
    wald_CIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
+   
+   adjusted_waldCIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
 
    cp_CIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
+   
+   scoreCIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
 
-   boot_CIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
+   boot_perCIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
+   
+   boot_tCIs <- data.frame(lower=numeric(1000), upper=numeric(1000))
 
   
 
@@ -279,29 +302,39 @@ for(i in 1:1000){
   y<-data[i]
 
   
-
-  #Apply the wald_int function and store the lower & upper endpoint.
+  #Apply the wald_int function and store the lower & upper endpoint (95% CI).
 
   wald_interval <- wald_int(y, size)
-
-  
 
   wald_CIs$lower[i] <- wald_interval[1]
 
   wald_CIs$upper[i] <- wald_interval[2]
+  
 
+  # Apply the adjusted wald interval function
+  adjusted_wald_interval <- adjusted_waldCI(y, size)
+  
+  adjusted_waldCIs$lower[i] <- adjusted_wald_interval[1]
+  
+  adjusted_waldCIs$upper[i] <- adjusted_wald_interval[2]
   
 
   #Apply the CP_int function and store the lower & upper endpoint.
 
   cp_interval <- CP_int(y, size)
 
-  
-
   cp_CIs$lower[i] <- cp_interval[1]
 
   cp_CIs$upper[i] <- cp_interval[2]
 
+  
+  # Apply score interval function and store the lower and upper endpoint
+  
+  score_interval <- scoreCI(y,size)
+  
+  scoreCIs$lower[i] <- score_interval[1]
+  
+  scoreCIs$upper[i] <- score_interval[2]
   
 
   #Apply the bootstrap_int function and store the lower & upper endpoint.
@@ -310,41 +343,39 @@ for(i in 1:1000){
 
   
 
-  boot_CIs$lower[i] <- boot_interval[1]
+  boot_perCIs$lower[i] <- boot_interval$bootstrap_per_interval[1]
 
-  boot_CIs$upper[i] <- boot_interval[2]
+  boot_perCIs$upper[i] <- boot_interval$bootstrap_per_interval[2]
 
+  boot_tCIs$lower[i] <-boot_interval$bootstrap_t_interval[1]
   
+  boot_tCIs$upper[i] <-boot_interval$bootstrap_t_interval[2]
 
 }
 
   #Store each data frame in the list with names.
 
   wald_confidence_int[[paste0("Wald", "size_", size, "prob_", prob)]] <- wald_CIs
+  
+  adjusted_wald_CI[[paste0("Adjusted Wald","size_", size,"prob_", prob)]]<-adjusted_waldCIs
 
   cp_confidence_int[[paste0("Clopper-Pearson", "size_", size, "prob_", prob)]] <- cp_CIs
+  
+  score_CI[[paste0("Score", "size_", size, "prob_", prob)]] <- scoreCIs
 
-  boot_percentile_confidence_int[[paste0("Bootstrap Percentile", "size_", size, "prob_", prob)]] <- boot_CIs
+  boot_per_CI[[paste0("Bootstrap Percentile", "size_", size, "prob_", prob)]] <- boot_perCIs
+  
+  boot_t_CI[[paste0("Bootstrap t interval", "size_", size, "prob_", prob)]] <- boot_tCIs
 
   }
 
 }
 
-
-
 ```
-
-
-
 
 # Code to Execute Monte Carlo Study (maybe join with above)
 
-
-
 We will create a data frame for the each type of interval that contains the sample size (n), the probability of success (p), the average length of the intervals, the standard errors of the average lengths, the coverage probability, the proportion of intervals that miss above, and the proportion of intervals that miss below. We will also produce plots to show the average lengths and coverage probabilities across different sample sizes.
-
-
-
 
 ```{r}
 
@@ -352,12 +383,17 @@ We will create a data frame for the each type of interval that contains the samp
 
 wald_lengths <- numeric(45)
 
+adjusted_wald_lengths <- numeric(45)
+
 cp_lengths <- numeric(45)
 
-boot_lengths <- numeric(45)
+score_lengths <-numeric(45)
+
+boot_per_lengths <- numeric(45)
+
+boot_t_lengths <-numeric(45)
 
 wald_se <- numeric(45)
-
 
 
 #Use a for loop to calculate the average lengths for each set of 1000 intervals. 
@@ -367,12 +403,17 @@ for(i in 1:45){
   wald_lengths[i] <- mean(wald_confidence_int[[i]]$upper - wald_confidence_int[[i]]$lower)
 
   wald_se[i] <- sd(wald_confidence_int[[i]]$upper - wald_confidence_int[[i]]$lower)
+  
+  adjusted_wald_lengths[i] <- mean(adjusted_wald_CI[[i]]$upper - adjusted_wald_CI[[i]]$lower)
+  
 
   cp_lengths[i] <- mean(cp_confidence_int[[i]]$upper - cp_confidence_int[[i]]$lower)
-
-  boot_lengths[i] <- mean(boot_percentile_confidence_int[[i]]$upper - boot_percentile_confidence_int[[i]]$lower)
-
   
+  score_lengths[i] <- mean(score_CI[[i]]$upper - score_CI[[i]]$lower)
+
+  boot_per_lengths[i] <- mean(boot_per_CI[[i]]$upper - boot_per_CI[[i]]$lower)
+
+  boot_t_lengths[i] <- mean(boot_t_CI[[i]]$upper -  boot_t_CI[[i]]$lower)
 
 }
 
@@ -390,11 +431,15 @@ repeated_p <- rep(p, 3)
 
 wald_coverage_probabilities <- numeric(45)
 
+adjusted_wald_coverage_probabilities <- numeric(45)
+
 cp_coverage_probabilities <- numeric(45)
 
-boot_coverage_probabilities <- numeric(45)
+score_coverage_probabilities <-numeric(45)
 
+boot_per_coverage_probabilities <- numeric(45)
 
+boot_t_coverage_probabilities <-numeric(45)
 
 
 
@@ -403,27 +448,34 @@ boot_coverage_probabilities <- numeric(45)
 for (i in 1:45) {
 
   wald_coverage_probabilities[i] <- mean(wald_confidence_int[[i]]$upper > repeated_p[i] & wald_confidence_int[[i]]$lower < repeated_p[i])
+  
+  adjusted_wald_coverage_probabilities[i] <- mean(adjusted_wald_CI[[i]]$upper > repeated_p[i] & adjusted_wald_CI[[i]]$lower < repeated_p[i])
 
   cp_coverage_probabilities[i] <- mean(cp_confidence_int[[i]]$upper > repeated_p[i] & cp_confidence_int[[i]]$lower < repeated_p[i])
+  
+  score_coverage_probabilities[i] <- mean(score_CI[[i]]$upper > repeated_p[i] & score_CI[[i]]$lower < repeated_p[i])
 
-  boot_coverage_probabilities[i] <- mean(boot_percentile_confidence_int[[i]]$upper > repeated_p[i] & boot_percentile_confidence_int[[i]]$lower < repeated_p[i])
+  boot_per_coverage_probabilities[i] <- mean(boot_per_CI[[i]]$upper > repeated_p[i] & boot_per_CI[[i]]$lower < repeated_p[i])
+  
+  boot_t_coverage_probabilities[i] <- mean(boot_t_CI[[i]]$upper > repeated_p[i] & boot_t_CI[[i]]$lower < repeated_p[i]
+                                             )
 
 }
-
-
-
-
-
 
 
 #Initalize numeric vectors of length 45 to store the percentage of intervals missing too low.
 
 wald_miss_low <- numeric(45)
 
+adjusted_wald_miss_low <- numeric(45)
+
 cp_miss_low <- numeric(45)
 
-boot_miss_low <- numeric(45)
+score_miss_low <- numeric(45)
 
+boot_per_miss_low <- numeric(45)
+
+boot_t_miss_low <-numeric(45)
 
 
 #Find the percentage where the true p is above the interval. 
@@ -431,22 +483,33 @@ boot_miss_low <- numeric(45)
 for (i in 1:45) {
 
   wald_miss_low[i] <- mean(wald_confidence_int[[i]]$upper < repeated_p[i])
+  
+  adjusted_wald_miss_low[i] <- mean(adjusted_wald_CI[[i]]$upper < repeated_p[i])
 
   cp_miss_low[i] <- mean(cp_confidence_int[[i]]$upper < repeated_p[i])
+  
+  score_miss_low[i] <- mean(score_CI[[i]]$upper < repeated_p[i])
 
-  boot_miss_low[i] <- mean(boot_percentile_confidence_int[[i]]$upper < repeated_p[i])
+  boot_per_miss_low[i] <- mean(boot_per_CI[[i]]$upper < repeated_p[i])
 
+  boot_t_miss_low[i]<-mean(boot_t_CI[[i]]$upper < repeated_p[i])
 }
 
 
 
-#Initalize numeric vectors of length 45 to store the percentage of intervals missing too high.
+# Initalize numeric vectors of length 45 to store the percentage of intervals missing too high.
 
 wald_miss_high <- numeric(45)
 
+adjusted_wald_miss_high <-numeric(45)
+
 cp_miss_high <- numeric(45)
 
-boot_miss_high <- numeric(45)
+score_miss_high <-numeric(45)
+
+boot_per_miss_high <- numeric(45)
+
+boot_t_miss_high <- numeric(45)
 
 
 
@@ -455,10 +518,16 @@ boot_miss_high <- numeric(45)
 for (i in 1:45) {
 
   wald_miss_high[i] <- mean(wald_confidence_int[[i]]$lower > repeated_p[i])
+  
+  adjusted_wald_miss_high[i] <- mean(adjusted_wald_CI[[i]]$lower > repeated_p[i])
 
   cp_miss_high[i] <- mean(cp_confidence_int[[i]]$lower > repeated_p[i])
+  
+  score_miss_high[i] <- mean(score_CI[[i]]$lower > repeated_p[i])
 
-  boot_miss_high[i] <- mean(boot_percentile_confidence_int[[i]]$lower > repeated_p[i])
+  boot_per_miss_high[i] <- mean(boot_per_CI[[i]]$lower > repeated_p[i])
+  
+  boot_t_miss_high[i] < mean(boot_t_CI[[i]]$lower > repeated_p[i])
 
 }
 
@@ -484,36 +553,38 @@ repeated_p <- rep(p, 3)
 
 wald_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = wald_lengths, coverage_probs = wald_coverage_probabilities, miss_low = wald_miss_low, miss_high = wald_miss_high)
 
-
-
 head(wald_summary)
 
+adjusted_wald_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = adjusted_wald_lengths, coverage_probs = adjusted_wald_coverage_probabilities, miss_low = adjusted_wald_miss_low, miss_high = adjusted_wald_miss_high)
 
 
 cp_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = cp_lengths, coverage_probs = cp_coverage_probabilities, miss_low = cp_miss_low, miss_high = cp_miss_high)
 
 
-
-boot_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_lengths, coverage_probs = boot_coverage_probabilities, miss_low = boot_miss_low, miss_high = boot_miss_high)
-
+score_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = score_lengths, coverage_probs = score_coverage_probabilities, miss_low = score_miss_low, miss_high = score_miss_high)
 
 
+# boot_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_lengths, coverage_probs = boot_coverage_probabilities, miss_low = boot_miss_low, miss_high = boot_miss_high)
 
+boot_per_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_per_lengths, coverage_probs = boot_per_coverage_probabilities, miss_low = boot_per_miss_low, miss_high = boot_per_miss_high)
+
+boot_t_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_t_lengths, coverage_probs = boot_t_coverage_probabilities, miss_low = boot_t_miss_low, miss_high = boot_t_miss_high)
 
 #Summary with just n, p, and coverage probabilities.
 
 simplified_wald_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = wald_coverage_probabilities, average_lengths = wald_lengths)
 
-
+simplified_adjusted_wald_summary <- data.frame(sample_size = n_values, p=repeated_p, coverage_probs = adjusted_wald_coverage_probabilities, average_lengths = adjusted_wald_lengths)
 
 simplified_cp_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = cp_coverage_probabilities, average_lengths = cp_lengths)
 
+simplified_score_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = score_coverage_probabilities, average_lengths = score_lengths)
 
+simplified_boot_per_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = boot_per_coverage_probabilities, average_lengths = boot_per_lengths)
 
-simplified_boot_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = boot_coverage_probabilities, average_lengths = boot_lengths)
+simplified_boot_t_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = boot_t_coverage_probabilities, average_lengths = boot_t_lengths)
 
 ```
-
 
 ```{r, include = FALSE}
 
@@ -523,15 +594,9 @@ library(ggplot2)
 
 ```
 
-
-
-
 ### Wald Convergence Probability Plot
 
-The plot for the Wald Interval shows that the convergence probabilities are missing under the desired 95% for almost all values of p when n=15. When n=30, five values appear very close to the 95% convergence probability, but most are still too low on convergence, with only one having more than 95% of the intervals capture the true p. When n=100, the convergence probability seems good for values of p between approximately 0.2 and 0.9, but still doesn't perform well for extreme values of p towards 0 or 1. This concept makes sense because the Wald Interval is based on the CLT which holds for large samples. 
-
-
-
+The plot for the Wald Interval shows that the convergence probabilities are missing under the desired 95% for almost all values of p when n=15. When n=30, five values appear very close to the 95% convergence probability, but most are still too low on convergence, with only one having more than 95% of the intervals capture the true p. When n=100, the convergence probability seems good for values of p between approximately 0.2 and 0.9, but still doesn't perform well for extreme values of p towards 0 or 1. This concept makes sense because the Wald Interval is based on the CLT which holds for large samples.
 
 ```{r}
 
@@ -557,13 +622,11 @@ ggplot(simplified_wald_summary, aes(x=p, y=wald_coverage_probabilities)) +
 
 ```
 
+### Adjusted Wald Coverage Probability Plot
 
 ### Clopper Pearson Coverage Probability Plot
 
-
-
-The plot for the Clopper-Pearson Interval shows that the convergence probabilities perform much better for smaller sample sizes compared to the Wald Interval. This is due to the fact that the Clopper-Pearson is an exact interval and does not rely on asymptotic normality. Even at n=100, the Clopper-Pearson Interval is still not ideal for extreme values of p (0.01 and 0.99) and more conservative values of p when n is smaller. The Clopper-Pearson Interval also "overhits" the target in most cases, with convergence probabilities above the 95% ideal convergence probability. 
-
+The plot for the Clopper-Pearson Interval shows that the convergence probabilities perform much better for smaller sample sizes compared to the Wald Interval. This is due to the fact that the Clopper-Pearson is an exact interval and does not rely on asymptotic normality. Even at n=100, the Clopper-Pearson Interval is still not ideal for extreme values of p (0.01 and 0.99) and more conservative values of p when n is smaller. The Clopper-Pearson Interval also "overhits" the target in most cases, with convergence probabilities above the 95% ideal convergence probability.
 
 ```{r}
 
@@ -589,19 +652,15 @@ ggplot(simplified_cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
 
 ```
 
-
-
-
 ### Raw Percentile Interval using a Parametric Bootstrap
 
 The raw percentile interval using a parametric bootstrap misses the ideal convergence probability for every sample size and value of p. When n=100, it gets relatively close, but all of the convergence probabilities still lie under 95%. Over all values of n, the raw percentile interval method performs very poorly for extreme values of p towards 0 and 1.
-
 
 ```{r}
 
 #Bootstrap Percentile Coverage Probability Plot
 
-ggplot(simplified_boot_summary, aes(x=p, y=boot_coverage_probabilities)) +
+ggplot(simplified_boot_per_summary, aes(x=p, y=boot_per_coverage_probabilities)) +
 
   #Use point graph to make easier to see differences.
 
@@ -623,15 +682,9 @@ ggplot(simplified_boot_summary, aes(x=p, y=boot_coverage_probabilities)) +
 
 ```
 
-
 ### Wald Interval Average Lengths Plot.
 
-
-
 As the sample size increases for the wald interval, the average lengths of the intervals decreases. For n=15, the average length peaks when p is around 0.5 to an average length of about 0.5 For n=30, the average length peaks when p is around 0.5 to an average length of about 0.35. For n=100, the average length peaks when p is around 0.5 to an average length of about 0.2.
-
-
-
 
 ```{r}
 
@@ -647,15 +700,9 @@ ggplot(simplified_wald_summary, aes(x=p, y=wald_lengths)) +
 
 ```
 
-
 ### Clopper-Pearson Average Lengths Plots
 
-
-
 As the sample size increases for the Clopper-Pearson interval, the average lengths of the intervals decreases. For n=15, the average length peaks when p is around 0.5 to an average length of about 0.52 For n=30, the average length peaks when p is around 0.5 to an average length of about 0.36. For n=100, the average length peaks when p is around 0.5 to an average length of about 0.2.
-
-
-
 
 ```{r}
 
@@ -673,25 +720,15 @@ ggplot(simplified_wald_summary, aes(x=p, y=cp_lengths)) +
 
 ```
 
-
-
-
 ### Raw Percentile Bootstrap Interval Average Lengths Plots
 
-
-
 As the sample size increases for the Raw Percentile Interval, the average lengths of the intervals decreases. For n=15, the average length peaks when p is around 0.5 to an average length of about 0.46. For n=30, the average length peaks when p is around 0.5 to an average length of about 0.33. For n=100, the average length peaks when p is around 0.5 to an average length of about 0.18.
-
-
-
-
-
 
 ```{r}
 
 #Bootstrap Percentile Interval Average Lengths Plot
 
-ggplot(simplified_boot_summary, aes(x=p, y=boot_lengths)) +
+ggplot(simplified_boot_per_summary, aes(x=p, y=boot_per_lengths)) +
 
   geom_line()+
 
@@ -702,5 +739,3 @@ ggplot(simplified_boot_summary, aes(x=p, y=boot_lengths)) +
        y = "Average Lengths")
 
 ```
-
-
