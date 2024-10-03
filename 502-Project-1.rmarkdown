@@ -62,7 +62,7 @@ wald_int <- function(y, n, alpha = 0.05){
 
 ### Method 2: Adjusted Wald Interval
 
-Because of the poor performance of the Wald interval for small samples or extreme p values, Adjusted Wald Interval is introduced as an improvement for estimating a Binomial proportion. The Adjusted Wald interval can be calculated by 'adding two successes and two failures and then use the Wald formula'. Define the adjusted proportion: p_hat=(X+2)/(n+4) and the adjusted sample size: n+4. The adjusted wald interval is p_hat +/- z_2/alpha \* estimated standard error.
+Because of the poor performance of the Wald interval for small samples or extreme p values, Adjusted Wald Interval is introduced as an improvement for estimating a Binomial proportion. The Adjusted Wald interval can be calculated by 'adding two successes and two failures and then use the Wald formula'. We can define the adjusted proportion: $\hat{p}=(X+2)/(n+4)$ and the adjusted sample size: n+4. 
 
 Function for Adjusted Wald Interval Calculation
 
@@ -77,7 +77,7 @@ adjusted_waldCI <- function (y, n, alpha=0.05){
 
 ### Method 3: Clopper-Pearson Interval
 
-The third method we will examine is the Clopper-Pearson Interval. This is referred to as an exact interval because it doesn't rely on the asymptotic normality seen in the Wald Interval. The Clopper-Pearson Interval is based on the idea of "inverting equal-tailed binomial tests" and it ensures that the coverage probability is at least (1-$\alpha$) (INSERT CITATION). The endpoints for this interval come from the $F_{a,b,c}$ distribution where a represents the numerator degrees of freedom, b represents the denominator degrees of freedom, and c represents the probability/area to the right.
+The third method we will examine is the Clopper-Pearson Interval. This is referred to as an exact interval because it doesn't rely on the asymptotic normality seen in the Wald Interval. The Clopper-Pearson Interval is based on the idea of "inverting equal-tailed binomial tests" and it ensures that the coverage probability is at least (1-$\alpha$) (Agresti & Coull, 1988, p. 119). The endpoints for this interval come from the $F_{a,b,c}$ distribution where a represents the numerator degrees of freedom, b represents the denominator degrees of freedom, and c represents the probability/area to the right.
 
 The Clopper-Pearson Interval can be found using the following function:
 
@@ -119,10 +119,9 @@ CP_int <- function(y, n, alpha = 0.05){
 
 ### Method 4: Score Interval
 
-Score interval is an improvement over the Wald interval, providing better performance, especially for small sample sizes or proportions near 0 or 1. It also performs much better than the exact intervals. The center of score interval is the weighted average (p_hat + z\^2 /2n)/(1 + z\^2/n). The estimated standard error will be sqrt(p_hat\*(1-p_hat)/n + z^2/4n^2).
+Score interval is an improvement over the Wald interval, providing better performance, especially for small sample sizes or proportions near 0 or 1. The center of score interval is the weighted average $\hat{p} + \frac{z_{\frac{\alpha}{2}}^2}{2n}$. The estimated standard error will be $\sqrt{\frac{\hat{p}(1 - \hat{p})}{n} + \frac{z_{\frac{\alpha}{2}}^2}{4n^2}}$.
 
-Create a function that calculates and returns the Score interval
-
+The Score Interval can be found with the following function.
 ```{r}
 # Score Interval Function 
 scoreCI <- function(y, n, alpha = 0.05) {
@@ -142,7 +141,7 @@ scoreCI <- function(y, n, alpha = 0.05) {
   lower_bound <- (center - error_term)/ (1 + (z^2 / n))
   upper_bound <- (center + error_term) / (1 + (z^2 / n))
   
-  # return the score interval
+  # Return the score interval
   return(c(score_lower<-lower_bound, score_upper<-upper_bound))
   
 }
@@ -166,6 +165,11 @@ bootstrap_int <- function(y, n, alpha = 0.05, B = 100) {
 
   # Calculate the sample proportion.
   phat <- y / n
+  
+   if (y == 0) {return(list(bootstrap_per_interval = c(0, 0), bootstrap_t_interval = c(0, 0)))
+   }
+  else if (y == n) {return(list(bootstrap_per_interval = c(1, 1), bootstrap_t_interval = c(1, 1))) }
+  else{
 
   # Get B resamples of size n and compute the sample proportion for each.
   boot_estimates <- replicate(B, {
@@ -187,19 +191,18 @@ bootstrap_int <- function(y, n, alpha = 0.05, B = 100) {
     return(boot_phat2)
   })
 
-  # Calculate the standard error of the secondary bootstrap proportions
-  estimated_SE_phat_boot <- sd(secondary_boot)
-
-  # If the standard error is too small (close to zero), return NA for the t-interval
+    estimated_SE_phat_boot <- sd(secondary_boot)
+  
+  #If the standard error is too small (close to zero), return NA for the t-interval
   if (estimated_SE_phat_boot < 1e-10) {
     lower_boot_t <- NA
     upper_boot_t <- NA
   } else {
-    # Calculate the t-statistics 
+    #Calculate the t-statistics 
     boot_phat_t <- (boot_estimates - phat) / estimated_SE_phat_boot
 
-    # Calculate the critical values (percentiles of the t-statistics)
-    lower_t_percentile <- quantile(boot_phat_t, alpha / 2, na.rm = TRUE)
+    #Calculate the critical values (percentiles of the t-statistics)
+    lower_t_percentile <- quantile(boot_phat_t, alpha / 2, na.rm=TRUE)
     upper_t_percentile <- quantile(boot_phat_t, 1 - alpha / 2, na.rm = TRUE)
 
     # Calculate the bootstrap t-interval
@@ -207,7 +210,7 @@ bootstrap_int <- function(y, n, alpha = 0.05, B = 100) {
     upper_boot_t <- phat - lower_t_percentile * estimated_SE_phat_boot
   }
   
-
+}
   # Return both intervals as a list
   return(list(
     bootstrap_per_interval = c(lower_percentile, upper_percentile),
@@ -725,8 +728,6 @@ ggplot(simplified_boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities))
        y = "Coverage Probabilities",
        x = "p") +
   
-  ylim (0.7,1) +
-  
   # Add a line at the ideal coverage probability (0.95) for clarity.
   geom_hline(yintercept = 0.95, color = "blue") 
   
@@ -882,4 +883,8 @@ paste("The standard error of the average lengths for the Bootstrap T Interval is
 
 # Results
 
-All have larger lengths when p is close to 0.5.
+We can see from all of the average lengths plots that as the sample size grows, the average lengths of the intervals increases. This means that as our sample size increases, we are able to get a more accurate picture (a narrower interval) of where the true value of p is. For all intervals, we can also see that there is a peak in the average length around p=0.5. This makes sense because p=0.5 maximizes the standard error. A probability of 0.5 means that it is essentially a toss-up - there is an equal probability of observing a success or a failure. When comparing p=0.5 for varying sample sizes: 
+
+* At n = 15, the Score Interval has the smallest average length and the Clopper-Pearson has the largest average length.
+* At n = 30, 
+* At n = 100, 
