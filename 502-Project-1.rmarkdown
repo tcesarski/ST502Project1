@@ -164,7 +164,7 @@ We will create one function that finds the two bootstrap based intervals for sav
 
 #Let the default for alpha be 0.05.
 
-bootstrap_int <- function(y, n, alpha =0.05, B=100) {
+bootstrap_int <- function(y, n, alpha =0.05,N=1000, B=100) {
 
   #Calculate the sample proportion.
   phat <- y/n
@@ -172,7 +172,7 @@ bootstrap_int <- function(y, n, alpha =0.05, B=100) {
   #Get 100 resamples of size n and compute the sample proportion for each.
   boot_estimates <- replicate(B,{
 
-    boot_sample <- rbinom(1, size = n, prob = phat)
+    boot_sample <- rbinom(N, size = n, prob = phat)
 
     boot_phat <- boot_sample/n
     
@@ -221,6 +221,9 @@ bootstrap_int <- function(y, n, alpha =0.05, B=100) {
     ))
   
 }  
+
+set.seed(200)
+bootstrap_int(5,15)
 ```
 
 # Creation of Data Process and Code
@@ -689,7 +692,7 @@ ggplot(boot_per_summary, aes(x=p, y=boot_per_coverage_probabilities)) +
 
   #Use point graph to make easier to see differences.
 
-  geom_point()+
+  geom_line()+
 
   #Facet wrap over sample size to compare plots for different sample sizes.
 
@@ -717,7 +720,7 @@ p about 95% of the time.
 ggplot(simplified_boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities)) +
   
   # Use a line graph to create a curve
-  geom_line(color = "black") +
+  geom_point(color = "black") +
   
   # Facet wrap over sample size to compare plots for different sample sizes, 
   # use labeller to show n = n_values in the strip labels
@@ -791,6 +794,24 @@ ggplot(simplified_wald_summary, aes(x=p, y=cp_lengths)) +
        y = "Average Lengths")
 
 ```
+
+### Score Interval Average Lengths Plots
+
+```{r}
+#Score Interval Average Lengths Plot
+
+ggplot(simplified_score_summary, aes(x=p, y=score_lengths)) +
+
+  geom_line(na.rm = TRUE)+
+
+  facet_wrap(~sample_size) + 
+
+  labs(title = "Score Interval Average Lengths by Sample Size",
+
+       y = "Average Lengths")
+
+```
+
 
 ### Raw Percentile Bootstrap Interval Average Lengths Plots
 
