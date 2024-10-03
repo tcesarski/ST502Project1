@@ -551,18 +551,23 @@ intervals for saving computational time.</p>
   # Calculate the standard error of the secondary bootstrap proportions
   estimated_SE_phat_boot &lt;- sd(secondary_boot)
 
-  # Calculate the t-statistics 
-  boot_phat_t &lt;- (boot_estimates - phat) / estimated_SE_phat_boot
+  # If the standard error is too small (close to zero), return NA for the t-interval
+  if (estimated_SE_phat_boot &lt; 1e-10) {
+    lower_boot_t &lt;- NA
+    upper_boot_t &lt;- NA
+  } else {
+    # Calculate the t-statistics 
+    boot_phat_t &lt;- (boot_estimates - phat) / estimated_SE_phat_boot
 
-
-  # Calculate the critical values (percentiles of the t-statistics)
+    # Calculate the critical values (percentiles of the t-statistics)
     lower_t_percentile &lt;- quantile(boot_phat_t, alpha / 2, na.rm = TRUE)
     upper_t_percentile &lt;- quantile(boot_phat_t, 1 - alpha / 2, na.rm = TRUE)
 
+    # Calculate the bootstrap t-interval
+    lower_boot_t &lt;- phat - upper_t_percentile * estimated_SE_phat_boot
+    upper_boot_t &lt;- phat - lower_t_percentile * estimated_SE_phat_boot
+  }
   
-  # Calculate the bootstrap t-interval
-  lower_boot_t &lt;- phat - upper_t_percentile * estimated_SE_phat_boot
-  upper_boot_t &lt;- phat - lower_t_percentile * estimated_SE_phat_boot
 
   # Return both intervals as a list
   return(list(
@@ -594,6 +599,9 @@ method.</p>
 
 set.seed(200)
 
+# set to N=1000 random samples 
+N&lt;-1000
+
 #Create a vector of sample sizes.
 
 sample_sizes &lt;- c(15, 30, 100)
@@ -621,34 +629,34 @@ boot_t_CI &lt;- list()
 #Iterate through all sample sizes.
 
 for(size in sample_sizes){
-
+  
   #Iterate through all probabilities.
 
   for(prob in p){
 
   #Intialize data frames to store the confidence intervals.
 
-   wald_CIs &lt;- data.frame(lower=numeric(1000), upper=numeric(1000))
+   wald_CIs &lt;- data.frame(lower=numeric(N), upper=numeric(N))
    
-   adjusted_waldCIs &lt;- data.frame(lower=numeric(1000), upper=numeric(1000))
+   adjusted_waldCIs &lt;- data.frame(lower=numeric(N), upper=numeric(N))
 
-   cp_CIs &lt;- data.frame(lower=numeric(1000), upper=numeric(1000))
+   cp_CIs &lt;- data.frame(lower=numeric(N), upper=numeric(N))
    
-   scoreCIs &lt;- data.frame(lower=numeric(1000), upper=numeric(1000))
+   scoreCIs &lt;- data.frame(lower=numeric(N), upper=numeric(N))
 
-   boot_perCIs &lt;- data.frame(lower=numeric(1000), upper=numeric(1000))
+   boot_perCIs &lt;- data.frame(lower=numeric(N), upper=numeric(N))
    
-   boot_tCIs &lt;- data.frame(lower=numeric(1000), upper=numeric(1000))
+   boot_tCIs &lt;- data.frame(lower=numeric(N), upper=numeric(N))
 
   
 
    #Generate the random data based on n and p.
 
-   data &lt;- rbinom(n=1000, size, prob)
+   data &lt;- rbinom(n=N, size, prob)
 
 #Get 1000 samples.
 
-for(i in 1:1000){
+for(i in 1:N){
 
   y&lt;-data[i]
 
@@ -1212,10 +1220,13 @@ ggplot(boot_per_summary, aes(x=p, y=boot_per_coverage_probabilities)) +
 </div>
 <div id="bootstrap-t-interval-using-a-parametric-bootstrap" class="section level3">
 <h3>Bootstrap t interval using a parametric bootstrap</h3>
-<p>From the below plot, we see that the coverage probability mostly
-close to the 0.95 line, indicating that the intervals provide accurate
-estimates of the true parameter. Bootstrap t interval performs well in
-capturing the true proportion p about 95% of the time.</p>
+<p>From the plot below, we observe that the coverage probabilities are
+generally close to the 0.95 line, indicating that the intervals provide
+accurate estimates of the true parameter. However, for extreme values of
+p (close to 0 or 1), the estimated standard error becomes very small,
+resulting in fewer valid intervals, especially around p=0.5. As the
+sample size increases, the t-intervals perform better across a wider
+range of p values, reducing the occurrence of invalid intervals.</p>
 <pre class="r"><code>ggplot(simplified_boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities)) +
   
   # Use a line graph to create a curve
@@ -1339,7 +1350,10 @@ ggplot(simplified_boot_per_summary, aes(x=p, y=boot_per_lengths)) +
 <div id="bootstrap-t-interval-average-lengths" class="section level3">
 <h3>Bootstrap T interval Average Lengths</h3>
 <p>The following plots also show that as the sample size increases, the
-average interval length decreases.</p>
+average interval length decreases. The average length peaks when p is
+around 0.5 is about 0.46 (n=15) ,0.33 (n=30), 0.18 (n=100). The minimum
+values for average lengths are around 0.44 (n=15), 0.28(n=30), 0.13
+(n=100) when p is 0 or 1.</p>
 <pre class="r"><code>#Bootstrap T Interval Average Lengths Plot
 
 ggplot(simplified_boot_t_summary, aes(x=p, y=boot_t_lengths)) +
