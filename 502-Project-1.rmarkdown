@@ -554,11 +554,7 @@ head(boot_per_summary)
 boot_t_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_t_lengths, coverage_probs = boot_t_coverage_probabilities, miss_low = boot_t_miss_low, miss_high = boot_t_miss_high)
 
 #Display first few rows of boot_t_summary
-
-#Summary with just n, p, and coverage probabilities.
-
-simplified_wald_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = wald_coverage_probabilities, average_lengths = wald_lengths)
-
+head(boot_t_summary)
 ```
 
 ```{r, include = FALSE}

@@ -960,10 +960,14 @@ head(boot_per_summary)</code></pre>
 <pre class="r"><code>boot_t_summary &lt;- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_t_lengths, coverage_probs = boot_t_coverage_probabilities, miss_low = boot_t_miss_low, miss_high = boot_t_miss_high)
 
 #Display first few rows of boot_t_summary
-
-#Summary with just n, p, and coverage probabilities.
-
-simplified_wald_summary &lt;- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = wald_coverage_probabilities, average_lengths = wald_lengths)</code></pre>
+head(boot_t_summary)</code></pre>
+<pre><code>##    n    p avg_int_lengths coverage_probs miss_low miss_high
+## 1 15 0.01      0.02535333          0.121    0.879     0.000
+## 2 15 0.08      0.19486167          0.716    0.281     0.003
+## 3 15 0.15      0.29636333          0.664    0.325     0.011
+## 4 15 0.22      0.36064833          0.849    0.130     0.021
+## 5 15 0.29      0.40873000          0.831    0.145     0.024
+## 6 15 0.36      0.43854167          0.877    0.085     0.038</code></pre>
 <div id="wald-convergence-probability-plot" class="section level3">
 <h3>Wald Convergence Probability Plot</h3>
 <p>The plot for the Wald Interval shows that the convergence
@@ -1335,9 +1339,26 @@ do not do an great job in terms of coverage probabilities. The Adjusted
 Wald Intervals and Score Intervals have the smallest average lengths and
 standard errors, but are still capturing the true population with a
 coverage probability close to <span class="math inline">\(1-\alpha\)</span>. The Adjusted Wald appears to do
-better in terms of coverage probabilities for more extreme values of p,
-but the Score Interval would still be preferred to the other methods
-discussed (bootstrap methods, Wald, and Clopper-Pearson).</p>
+better than the Score in terms of coverage probabilities for more
+extreme values of p since the score method at the extremes shows “the
+actual coverage probability falls seriously below the nominal confidence
+level, and this badly affects the actual confidence coefficient”
+(Agresti &amp; Coull, 1998, p. 122). This actually doesn’t improve as
+much n increases for the extreme values of p, but still performs
+reasonably well for most values of p and is still to be preferred
+compared to four of the other methods presented (Clopper-Pearson, Wald,
+and Bootstrap Intervals). The Adjusted Wald Interval does not have the
+disadvantage of large dips at extreme values of p, but “the proportion
+of the parameter space for which the actual coverage probability falls
+within 0.02 of 0.95” (Agresti &amp; Coull, 1998, p. 124) is slightly
+less than the Score Interval. Based on all of the findings and results
+above, we would recommend using either the Adjusted Wald or Score
+Intervals for calculating a confidence interval for a population
+proportion. If there is reason to believe based on background knowledge
+of the topic that the true probability might be close to 0 or 1 we
+should opt for the Adjusted Wald but, for more moderate values of p,
+both the Adjusted Wald and Score Intervals give fairly narrow intervals
+that are accurate across various sample sizes.</p>
 </div>
 
 
