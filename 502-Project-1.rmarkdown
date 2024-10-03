@@ -130,19 +130,21 @@ scoreCI <- function(y, n, alpha = 0.05) {
   z <- qnorm(1 - alpha / 2)
   
   # center of the interval 
-  center <- (p_hat + (z^2 / (2 * n))) / (1 + (z^2 / n))
+  center <- (p_hat + (z^2 / (2 * n)))
   
   # Calculate the margin of error
   error_term <- z * sqrt((p_hat * (1 - p_hat) + (z^2 / (4 * n)))/n)
   
   # Calculate the lower and upper bounds
-  lower_bound <- (center - error_term) / (1 + (z^2 / n))
+  lower_bound <- (center - error_term)/ (1 + (z^2 / n))
   upper_bound <- (center + error_term) / (1 + (z^2 / n))
   
   # return the score interval
   return(c(score_lower<-lower_bound, score_upper<-upper_bound))
-
+  
 }
+
+scoreCI(190,200)
 ```
 
 
@@ -175,9 +177,9 @@ bootstrap_int <- function(y, n, alpha =0.05, B=100) {
     boot_phat <- boot_sample/n
     
     # Check for extreme cases where boot_phat is 0 or 1 (leading to Inf t-statistics)
-    if (boot_phat == 0 || boot_phat == 1) {
-      return(c(NA, NA))  
-    }
+    #if (boot_phat == 0 || boot_phat == 1) {
+      #return(c(NA, NA))  
+    #}
     
     # bootstrap t interval for standard error
     se_boot <- sqrt(boot_phat*(1-boot_phat)/n)
@@ -197,8 +199,8 @@ bootstrap_int <- function(y, n, alpha =0.05, B=100) {
   t_stats <- t_stats[!is.na(t_stats) & is.finite(t_stats)]
   
   # Calculate the raw percentile interval
-  lower_percentile <- quantile(boot_phats, alpha / 2, na.rm=TRUE)
-  upper_percentile <- quantile(boot_phats, 1 - alpha / 2, na.rm=TRUE)
+  lower_percentile <- quantile(boot_phats, alpha / 2)
+  upper_percentile <- quantile(boot_phats, 1 - alpha / 2)
   
   # Calculate the critical values (percentiles of the t-statistics)
   lower_t_percentile <- quantile(t_stats, alpha / 2, na.rm=TRUE)
@@ -559,6 +561,10 @@ simplified_boot_per_summary <- data.frame(sample_size = n_values, p = repeated_p
 
 simplified_boot_t_summary <- data.frame(sample_size = n_values, p = repeated_p, coverage_probs = boot_t_coverage_probabilities, average_lengths = boot_t_lengths)
 
+boot_per_summary
+boot_t_summary
+
+
 ```
 
 ```{r, include = FALSE}
@@ -663,7 +669,7 @@ ggplot(simplified_score_summary, aes(x = p, y = score_coverage_probabilities)) +
   labs(title = "Score Interval Coverage Probabilities by Sample Size",
        y = "Coverage Probabilities",
        x = "p") +
-  ylim(0.7,1) +
+  ylim(0,1) +
   
   # Add a line at the ideal coverage probability (0.95) for clarity.
   geom_hline(yintercept = 0.95, color = "blue") 
@@ -697,7 +703,7 @@ ggplot(boot_per_summary, aes(x=p, y=boot_per_coverage_probabilities)) +
 
   #Add a line at the idea convergence probability for clarity.
 
-  geom_hline(yintercept = 0.95, color = "blue")
+  geom_hline(yintercept = 0.95, color = "blue") +ylim(0,1)
 
 ```
 
