@@ -32,6 +32,7 @@ For this study, we will utilize simulation to analyze different confidence inter
 
 To determine the best method, we will use simulation to generate many confidence intervals at varying sample sizes and probabilities of success. From there, we will look at the average length of these intervals, the standard errors of these lengths, the observed coverage probability, and the percentage of intervals that are missing below the true proportion and the percentage of intervals that are missing above the true proportion.
 
+
 # Methods Used & Calculations
 
 ### Method 1: Wald Interval
@@ -58,6 +59,7 @@ wald_int <- function(y, n, alpha = 0.05){
 
 ```
 
+
 ### Method 2: Adjusted Wald Interval
 
 Because of the poor performance of the Wald interval for small samples or extreme p values, Adjusted Wald Interval is introduced as an improvement for estimating a Binomial proportion. The Adjusted Wald interval can be calculated by 'adding two successes and two failures and then use the Wald formula'. Define the adjusted proportion: p_hat=(X+2)/(n+4) and the adjusted sample size: n+4. The adjusted wald interval is p_hat +/- z_2/alpha \* estimated standard error.
@@ -71,6 +73,7 @@ adjusted_waldCI <- function (y, n, alpha=0.05){
 }
 
 ```
+
 
 ### Method 3: Clopper-Pearson Interval
 
@@ -144,7 +147,6 @@ scoreCI <- function(y, n, alpha = 0.05) {
   
 }
 
-scoreCI(190,200)
 ```
 
 
@@ -160,71 +162,56 @@ The parametric bootstrap t-interval is based on resampling from this specific pa
 We will create one function that finds the two bootstrap based intervals for saving computational time.
 
 ```{r}
-#Create a bootstrap interval function. 
+bootstrap_int <- function(y, n, alpha = 0.05, B = 100) {
 
-#Let the default for alpha be 0.05.
+  # Calculate the sample proportion.
+  phat <- y / n
 
-bootstrap_int <- function(y, n, alpha =0.05,N=1000, B=100) {
+  # Get B resamples of size n and compute the sample proportion for each.
+  boot_estimates <- replicate(B, {
 
-  #Calculate the sample proportion.
-  phat <- y/n
-
-  #Get 100 resamples of size n and compute the sample proportion for each.
-  boot_estimates <- replicate(B,{
-
-    boot_sample <- rbinom(N, size = n, prob = phat)
-
-    boot_phat <- boot_sample/n
+    boot_sample <- rbinom(1, size = n, prob = phat) 
+    boot_phat <- boot_sample / n  
     
-    # Check for extreme cases where boot_phat is 0 or 1 (leading to Inf t-statistics)
-    #if (boot_phat == 0 || boot_phat == 1) {
-      #return(c(NA, NA))  
-    #}
-    
-    # bootstrap t interval for standard error
-    se_boot <- sqrt(boot_phat*(1-boot_phat)/n)
-   
-    # calculate t_statistic
-    t_stat <-(boot_phat - phat)/se_boot
-    
-    # return bootstrap sample proportion and t-statistic
-    return(c(boot_phat, t_stat))
+    return(boot_phat)
   })
-   
-  # bootstrap sample proportions
-  boot_phats <- boot_estimates[1, ]  
-    
-  #  t-statistics, remove NA, Inf, and -Inf values
-  t_stats <- boot_estimates[2, ]
-  t_stats <- t_stats[!is.na(t_stats) & is.finite(t_stats)]
-  
-  # Calculate the raw percentile interval
-  lower_percentile <- quantile(boot_phats, alpha / 2)
-  upper_percentile <- quantile(boot_phats, 1 - alpha / 2)
-  
+
+  # Calculate the raw percentile interval from the bootstrapped proportions
+  lower_percentile <- quantile(boot_estimates, alpha / 2)
+  upper_percentile <- quantile(boot_estimates, 1 - alpha / 2)
+
+  # Secondary bootstrap for standard error estimation and t-statistics
+  secondary_boot <- replicate(B, {
+    boot_sample2 <- rbinom(1, size = n, prob = phat)
+    boot_phat2 <- boot_sample2 / n
+    return(boot_phat2)
+  })
+
+  # Calculate the standard error of the secondary bootstrap proportions
+  estimated_SE_phat_boot <- sd(secondary_boot)
+
+  # Calculate the t-statistics 
+  boot_phat_t <- (boot_estimates - phat) / estimated_SE_phat_boot
+
+
   # Calculate the critical values (percentiles of the t-statistics)
-  lower_t_percentile <- quantile(t_stats, alpha / 2, na.rm=TRUE)
-  upper_t_percentile <- quantile(t_stats, 1 - alpha / 2, na.rm=TRUE)
+    lower_t_percentile <- quantile(boot_phat_t, alpha / 2, na.rm = TRUE)
+    upper_t_percentile <- quantile(boot_phat_t, 1 - alpha / 2, na.rm = TRUE)
 
-  # Calculate the standard error of the original sample proportion
-  se_phat <- sqrt(phat * (1 - phat) / n)
   
-  # Calculate the bootstrap t-interval 
-  lower_boot_t <- phat - upper_t_percentile * se_phat
-  upper_boot_t <- phat - lower_t_percentile * se_phat
-
+  # Calculate the bootstrap t-interval
+  lower_boot_t <- phat - upper_t_percentile * estimated_SE_phat_boot
+  upper_boot_t <- phat - lower_t_percentile * estimated_SE_phat_boot
 
   # Return both intervals as a list
   return(list(
     bootstrap_per_interval = c(lower_percentile, upper_percentile),
     bootstrap_t_interval = c(lower_boot_t, upper_boot_t)
-    ))
-  
-}  
+  ))
+}
 
-set.seed(200)
-bootstrap_int(5,15)
 ```
+
 
 # Creation of Data Process and Code
 
@@ -513,7 +500,7 @@ for (i in 1:45) {
 
   boot_per_miss_high[i] <- mean(boot_per_CI[[i]]$lower > repeated_p[i])
   
-  boot_t_miss_high[i] < mean(boot_t_CI[[i]]$lower > repeated_p[i])
+  boot_t_miss_high[i] <- mean(boot_t_CI[[i]]$lower > repeated_p[i])
 
 }
 
@@ -672,7 +659,7 @@ ggplot(simplified_score_summary, aes(x = p, y = score_coverage_probabilities)) +
   labs(title = "Score Interval Coverage Probabilities by Sample Size",
        y = "Coverage Probabilities",
        x = "p") +
-  ylim(0,1) +
+  ylim(0.7,1) +
   
   # Add a line at the ideal coverage probability (0.95) for clarity.
   geom_hline(yintercept = 0.95, color = "blue") 
@@ -720,7 +707,7 @@ p about 95% of the time.
 ggplot(simplified_boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities)) +
   
   # Use a line graph to create a curve
-  geom_point(color = "black") +
+  geom_line(color = "black") +
   
   # Facet wrap over sample size to compare plots for different sample sizes, 
   # use labeller to show n = n_values in the strip labels
@@ -760,6 +747,10 @@ ggplot(simplified_wald_summary, aes(x=p, y=wald_lengths)) +
 
 ### Adjusted Wald Average Lengths Plots
 
+The plots below indicating that as the sample size increases, the intervals become much tighter, and its length will decrease. 
+The average length peaks when p is around 0.5 to an average length of about 0.44 (n=15), 0.33 (n=30), 0.19 (n=100).
+The minimum values for average lengths are 0.28 (n=15), 0.16(n=30), 0.03 (n=100) when p is 0 or 1.
+
 ```{r}
 ggplot(simplified_adjusted_wald_summary, aes(x=p, y=adjusted_wald_lengths)) +
 
@@ -796,6 +787,10 @@ ggplot(simplified_wald_summary, aes(x=p, y=cp_lengths)) +
 ```
 
 ### Score Interval Average Lengths Plots
+
+As the sample size increases , the average lengths of the intervals decreases. 
+The average length peaks when p is around 0.5 is about 0.44 (n=15) ,0.33 (n=30), 0.18 (n=100).
+The minimum values for average lengths are 0.21 (n=15), 0.13(n=30), 0.04 (n=100) when p is 0 or 1.
 
 ```{r}
 #Score Interval Average Lengths Plot
@@ -835,6 +830,8 @@ ggplot(simplified_boot_per_summary, aes(x=p, y=boot_per_lengths)) +
 
 
 ### Bootstrap T interval Average Lengths
+
+The following plots also show that as the sample size increases, the average interval length decreases. 
 
 ```{r}
 #Bootstrap T Interval Average Lengths Plot
