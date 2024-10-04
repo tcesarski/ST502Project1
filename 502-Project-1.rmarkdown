@@ -30,8 +30,7 @@ For this study, we will utilize simulation to analyze different confidence inter
 
 6.  Bootstrap T Interval using a Parametric Bootstrap
 
-To determine the best method, we will use simulation to generate many confidence intervals at varying sample sizes and probabilities of success. From there, we will look at the average length of these intervals, the standard errors of these lengths, the observed coverage probability, and the percentage of intervals that are missing below the true proportion and the percentage of intervals that are missing above the true proportion. Since conducting a confidence interval is "one of the most basic analyses in statistical inference (Agresti & Coull, 1998, p. 119), we want to form intervals that are both accurate, meaningful, and do not have excess variability. 
-
+To determine the best method, we will use simulation to generate many confidence intervals at varying sample sizes and probabilities of success. From there, we will look at the average length of these intervals, the standard errors of these lengths, the observed coverage probability, and the percentage of intervals that are missing below the true proportion and the percentage of intervals that are missing above the true proportion. Since conducting a confidence interval is "one of the most basic analyses in statistical inference (Agresti & Coull, 1998, p. 119), we want to form intervals that are both accurate, meaningful, and do not have excess variability.
 
 # Methods Used & Calculations
 
@@ -59,10 +58,9 @@ wald_int <- function(y, n, alpha = 0.05){
 
 ```
 
-
 ### Method 2: Adjusted Wald Interval
 
-Because of the poor performance of the Wald interval for small samples or extreme p values, Adjusted Wald Interval is introduced as an improvement for estimating a Binomial proportion. The Adjusted Wald interval can be calculated by 'adding two successes and two failures and then use the Wald formula'. We can define the adjusted proportion: $\hat{p}=(X+2)/(n+4)$ and the adjusted sample size: n+4. 
+Because of the poor performance of the Wald interval for small samples or extreme p values, Adjusted Wald Interval is introduced as an improvement for estimating a Binomial proportion. The Adjusted Wald interval can be calculated by 'adding two successes and two failures and then use the Wald formula'. We can define the adjusted proportion: $\hat{p}=(X+2)/(n+4)$ and the adjusted sample size: n+4.
 
 Function for Adjusted Wald Interval Calculation
 
@@ -73,7 +71,6 @@ adjusted_waldCI <- function (y, n, alpha=0.05){
 }
 
 ```
-
 
 ### Method 3: Clopper-Pearson Interval
 
@@ -122,6 +119,7 @@ CP_int <- function(y, n, alpha = 0.05){
 Score interval is an improvement over the Wald interval, providing better performance, especially for small sample sizes or proportions near 0 or 1. The center of score interval is the weighted average $\hat{p} + \frac{z_{\frac{\alpha}{2}}^2}{2n}$. The estimated standard error will be $\sqrt{\frac{\hat{p}(1 - \hat{p})}{n} + \frac{z_{\frac{\alpha}{2}}^2}{4n^2}}$.
 
 The Score Interval can be found with the following function.
+
 ```{r}
 # Score Interval Function 
 scoreCI <- function(y, n, alpha = 0.05) {
@@ -148,11 +146,9 @@ scoreCI <- function(y, n, alpha = 0.05) {
 
 ```
 
-
 ### Method 5: Raw Percentile Interval using a Parametric Bootstrap
 
 The fifth method we will examine is a raw percentile interval using a parametric bootstrap. The idea of a parametric bootstrap is to resample from a fitted distribution to get many samples of the same size (that correspond to the original sample size). Then find the bootstrap estimate (in this case the sample proportion) and generate the bootstrap distribution. Finally, we will use the (1-$\alpha$/2) and $\alpha$/2 quantiles from this bootstrap distribution as the confidence interval.
-
 
 ### Method 6: Bootstrap t interval using a parametric bootstrap
 
@@ -219,7 +215,6 @@ bootstrap_int <- function(y, n, alpha = 0.05, B = 100) {
 }
 
 ```
-
 
 # Creation of Data Process and Code
 
@@ -588,7 +583,7 @@ ggplot(wald_summary, aes(x=p, y=wald_coverage_probabilities)) +
 
 ### Adjusted Wald Coverage Probability Plot
 
-The plot below for Adjusted Wald coverage probability shows that as the sample size increases from 15 to 100, the curve moves closer to the 0.95 reference line, indicating better performance. However, even for the small sample size of 15, the Adjusted Wald method still outperforms the standard Wald method. Overall, the Adjusted Wald confidence intervals perform adequately for practical applications across essentially any sample size (Agresti & Coull, 1998, p. 124).
+The plot below for Adjusted Wald coverage probability shows that as the sample size increases from 15 to 100, the curve moves closer to the 0.95 reference line, indicating better performance. Even for the small sample size of 15, the Adjusted Wald method still outperforms the standard Wald method. Overall, the Adjusted Wald confidence intervals perform adequately for practical applications across essentially any sample size (Agresti & Coull, 1998, p. 124).
 
 ```{r}
 ggplot(adjusted_wald_summary, aes(x = p, y = adjusted_wald_coverage_probabilities)) +
@@ -612,10 +607,9 @@ ggplot(adjusted_wald_summary, aes(x = p, y = adjusted_wald_coverage_probabilitie
   
 ```
 
-
 ### Clopper Pearson Coverage Probability Plot
 
-The plot for the Clopper-Pearson Interval shows that the convergence probabilities perform much better for smaller sample sizes compared to the Wald Interval. This is due to the fact that the Clopper-Pearson is an exact interval and does not rely on asymptotic normality. Even at n=100, the Clopper-Pearson Interval is still not ideal for extreme values of p (0.01 and 0.99) and more conservative values of p when n is smaller. The Clopper-Pearson Interval also "overhits" the target in most cases, with convergence probabilities above the 95% ideal convergence probability, which is actually not preferred. 
+The plot for the Clopper-Pearson Interval shows that the convergence probabilities perform much better for smaller sample sizes compared to the Wald Interval. This is due to the fact that the Clopper-Pearson is an exact interval and does not rely on asymptotic normality. Even at n=100, the Clopper-Pearson Interval is still not ideal for extreme values of p (0.01 and 0.99) and more conservative values of p when n is smaller. The Clopper-Pearson Interval also "overhits" the target in most cases, with convergence probabilities above the 95% ideal convergence probability, which is actually not preferred.
 
 ```{r}
 
@@ -643,7 +637,7 @@ ggplot(cp_summary, aes(x=p, y=cp_coverage_probabilities)) +
 
 ### Score Interval
 
-The curve dips below 0.95 when p gets closer to 1, but not as drastically as it does for the Wald interval. The score interval tends to avoid the severe under-coverage that the Wald interval suffers from in these regions. In addition, for smaller sample sizes, the plot may show more variability, but the Score interval still performs better than the Wald interval.
+The curve dips below 0.95 when p gets closer to 0 or 1, but not as drastically as it does for the Wald interval. The score interval tends to avoid the severe under-coverage that the Wald interval suffers from in these regions. In addition, for smaller sample sizes, the plot may show more variability, but the Score interval still performs better than the Wald interval.
 
 ```{r}
 ggplot(score_summary, aes(x = p, y = score_coverage_probabilities)) +
@@ -665,7 +659,6 @@ ggplot(score_summary, aes(x = p, y = score_coverage_probabilities)) +
   geom_hline(yintercept = 0.95, color = "blue") 
   
 ```
-
 
 ### Raw Percentile Interval using a Parametric Bootstrap
 
@@ -697,10 +690,9 @@ ggplot(boot_per_summary, aes(x=p, y=boot_per_coverage_probabilities)) +
 
 ```
 
-
 ### Bootstrap T Interval using a Parametric Bootstrap
 
-From the plot below, we observe that the coverage probabilities are below the 95% reference line. The coverage probabilities improve as n increases and the coverage probabilties get very close to the ideal coverage probability for n=100. However, it is not performing very well for small sample sizes at all.
+From the plot below, we observe that the coverage probabilities are below the 95% reference line. The coverage probabilities improve as n increases and get very close to the ideal coverage probability for n=100. However, it is not performing very well for small sample sizes at all.
 
 ```{r}
 ggplot(boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities)) +
@@ -722,8 +714,6 @@ ggplot(boot_t_summary, aes(x = p, y = boot_t_coverage_probabilities)) +
   
 ```
 
-
-
 ### Wald Interval Average Lengths Plot
 
 As the sample size increases for the wald interval, the average lengths of the intervals decreases. For n=15, the average length peaks when p is around 0.5 to an average length of about 0.5 For n=30, the average length peaks when p is around 0.5 to an average length of about 0.35. For n=100, the average length peaks when p is around 0.5 to an average length of about 0.2.
@@ -744,9 +734,7 @@ ggplot(wald_summary, aes(x=p, y=wald_lengths)) +
 
 ### Adjusted Wald Average Lengths Plots
 
-The plots below indicating that as the sample size increases, the intervals become much tighter, and its length will decrease. 
-The average length peaks when p is around 0.5 to an average length of about 0.44 (n=15), 0.33 (n=30), 0.19 (n=100).
-The minimum values for average lengths are 0.28 (n=15), 0.16(n=30), 0.03 (n=100).
+The plots below indicating that as the sample size increases, the intervals become much tighter, and its length will decrease. The average length peaks when p is around 0.5 to an average length of about 0.44 (n=15), 0.33 (n=30), 0.19 (n=100). The minimum values for average lengths are 0.28 (n=15), 0.16(n=30), 0.03 (n=100).
 
 ```{r}
 ggplot(adjusted_wald_summary, aes(x=p, y=adjusted_wald_lengths)) +
@@ -760,8 +748,6 @@ ggplot(adjusted_wald_summary, aes(x=p, y=adjusted_wald_lengths)) +
        y = "Average Lengths")
 
 ```
-
-
 
 ### Clopper-Pearson Average Lengths Plots
 
@@ -785,9 +771,7 @@ ggplot(cp_summary, aes(x=p, y=cp_lengths)) +
 
 ### Score Interval Average Lengths Plots
 
-As the sample size increases , the average lengths of the intervals decreases. 
-The average length peaks when p is around 0.5 is about 0.44 (n=15) ,0.33 (n=30), 0.18 (n=100).
-The minimum values for average lengths are 0.21 (n=15), 0.13(n=30), 0.04 (n=100).
+As the sample size increases , the average lengths of the intervals decreases. The average length peaks when p is around 0.5 is about 0.44 (n=15) ,0.33 (n=30), 0.18 (n=100). The minimum values for average lengths are 0.21 (n=15), 0.13(n=30), 0.04 (n=100).
 
 ```{r}
 #Score Interval Average Lengths Plot
@@ -803,7 +787,6 @@ ggplot(score_summary, aes(x=p, y=score_lengths)) +
        y = "Average Lengths")
 
 ```
-
 
 ### Raw Percentile Bootstrap Interval Average Lengths Plots
 
@@ -825,12 +808,9 @@ ggplot(boot_per_summary, aes(x=p, y=boot_per_lengths)) +
 
 ```
 
-
 ### Bootstrap T interval Average Lengths
 
-The following plots also show that as the sample size increases, the average interval length decreases. 
-The average length peaks when p is around 0.5 is about 0.46 (n=15) ,0.33 (n=30), 0.18 (n=100).
-The minimum values for average lengths are around 0.44 (n=15), 0.28(n=30), 0.13 (n=100).
+The following plots also show that as the sample size increases, the average interval length decreases. The average length peaks when p is around 0.5 is about 0.46 (n=15) ,0.33 (n=30), 0.18 (n=100). The minimum values for average lengths are around 0.44 (n=15), 0.28(n=30), 0.13 (n=100).
 
 ```{r}
 #Bootstrap T Interval Average Lengths Plot
@@ -846,7 +826,6 @@ ggplot(boot_t_summary, aes(x=p, y=boot_t_lengths)) +
        y = "Average Lengths")
 
 ```
-
 
 ### Standard Errors of Average lengths
 
@@ -876,21 +855,16 @@ paste("The standard error of the average lengths for the Bootstrap T Interval is
 
 We can see from the Coverage Proability Plots that as the sample size grows, the coverage probabilities of all the intervals gets closer to the ideal coverage probability of $1-\alpha$. The coverage probabilities also appear to be closer to the $1-\alpha$ when p is close to 0.5, rather than extreme values of p towards 0 and 1. The Wald Interval coverage probabilities display a lot of variability, with most of the combinations of n and p falling below the 95% threshold. On the other hand, the Clopper Pearson Interval appears to be above the 95% mark for most combinations, but this comes at the expense of larger intervals which we will discuss in the following paragraph. The Average Wald Interval and the Score Intervals do a fairly good job, although the Adjusted Wald is not doing great for a small sample size of 15. The Bootstrap Percentile Interval and the Bootstrap T Interval are consistently below the ideal convergence probability, with the Bootstrap T Interval showing a significant discrepancy for a small sample size.
 
-We can see from all of the average lengths plots that as the sample size grows, the average lengths of the intervals increases. This means that as our sample size increases, we are able to get a more accurate picture (a narrower interval) of where the true value of p is. For all intervals, we can also see that there is a peak in the average length around p=0.5. This makes sense because p=0.5 maximizes the standard error. A probability of 0.5 means that it is essentially a toss-up - there is an equal probability of observing a success or a failure. When comparing p=0.5 for varying sample sizes: 
+We can see from all of the average lengths plots that as the sample size grows, the average lengths of the intervals increases. This means that as our sample size increases, we are able to get a more accurate picture (a narrower interval) of where the true value of p is. For all intervals, we can also see that there is a peak in the average length around p=0.5. This makes sense because p=0.5 maximizes the standard error. A probability of 0.5 means that it is essentially a toss-up - there is an equal probability of observing a success or a failure. When comparing p=0.5 for varying sample sizes:
 
-* At n = 15, the Score Interval has the smallest average length and the Clopper-Pearson has the largest average length.
-* At n = 30, the Adjusted Wald Interval has the smallest average length (closely followed by the Score Interval) and the Clopper-Pearson has the largest average length.
-* At n = 100, the Adjusted Wald Interval has the smallest average length (closely followed by the Score Interval) and the Clopper-Pearson has the largest average length.
+-   At n = 15, the Score Interval has the smallest average length and the Clopper-Pearson has the largest average length.
+-   At n = 30, the Adjusted Wald Interval has the smallest average length (closely followed by the Score Interval) and the Clopper-Pearson has the largest average length.
+-   At n = 100, the Adjusted Wald Interval has the smallest average length (closely followed by the Score Interval) and the Clopper-Pearson has the largest average length.
 
 The standard errors for these average lengths show similar patterns with the Adjusted Wald and the Score Intervals showing the least amount of variability and the Clopper-Pearson showing the greatest standard error.
 
 # Conclusions
 
-Based on the coverage probabilities and the average lengths, we would prefer either the Adjusted Wald Interval or the Score Interval to estimate a true population proportion. Although the Wald is the method typically introduced in many Introductory Statistics courses, it shows much variability and relies on asymptotic normality, making it unfit for smaller sample sizes. On the other hand, the Clopper-Pearson does better for smaller sample sizes but actually overshoots the coverage probability with larger average lengths which isn't ideal either. Both of the bootstrap intervals come at a higher computational cost and also do not do an great job in terms of coverage probabilities. The Adjusted Wald Intervals and Score Intervals have the smallest average lengths and standard errors, but are still capturing the true population with a coverage probability close to $1-\alpha$. The Adjusted Wald appears to do better than the Score in terms of coverage probabilities for more extreme values of p since the score method at the extremes shows "the actual coverage probability falls seriously below the nominal confidence level, and this badly affects the actual confidence coefficient" (Agresti & Coull, 1998, p. 122). This actually doesn't improve as much n increases for the extreme values of p, but still performs reasonably well for most values of p and is still to be preferred compared to four of the other methods presented (Clopper-Pearson, Wald, and Bootstrap Intervals). The Adjusted Wald Interval does not have the disadvantage of large dips at extreme values of p, but "the proportion of the parameter space for which the actual coverage probability falls within 0.02 of 0.95" (Agresti & Coull, 1998, p. 124) is slightly less than the Score Interval.
+Based on the coverage probabilities and the average lengths, we would prefer either the Adjusted Wald Interval or the Score Interval to estimate a true population proportion. Although the Wald is the method typically introduced in many Introductory Statistics courses, it shows much variability and relies on asymptotic normality, making it unfit for smaller sample sizes. On the other hand, the Clopper-Pearson does better for smaller sample sizes but actually overshoots the coverage probability with larger average lengths which isn't ideal either. Both of the bootstrap intervals come at a higher computational cost and also do not do an great job in terms of coverage probabilities. The Adjusted Wald Intervals and Score Intervals have the smallest average lengths and standard errors, but are still capturing the true population with a coverage probability close to $1-\alpha$. The Adjusted Wald appears to do better than the Score in terms of coverage probabilities for more extreme values of p since the score method at the extremes shows "the actual coverage probability falls seriously below the nominal confidence level, and this badly affects the actual confidence coefficient" (Agresti & Coull, 1998, p. 122). This actually doesn't improve as much n increases for the extreme values of p, but still performs reasonably well for most values of p and is still to be preferred compared to four of the other methods presented (Clopper-Pearson, Wald, and Bootstrap Intervals). The Adjusted Wald Interval does not have the disadvantage of large dips at extreme values of p, but "the proportion of the parameter space for which the actual coverage probability falls within 0.02 of 0.95" (Agresti & Coull, 1998, p. 124) is slightly less than the Score Interval. 
+
 Based on all of the findings and results above, we would recommend using either the Adjusted Wald or Score Intervals for calculating a confidence interval for a population proportion. If there is reason to believe based on background knowledge of the topic that the true probability might be close to 0 or 1 we should opt for the Adjusted Wald but, for more moderate values of p, both the Adjusted Wald and Score Intervals give fairly narrow intervals that are accurate across various sample sizes.
-
-
-
-
-
-
