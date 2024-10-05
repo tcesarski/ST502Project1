@@ -853,7 +853,23 @@ paste("The standard error of the average lengths for the Bootstrap T Interval is
 
 # Results
 
+### Coverage Probability
+
 We can see from the Coverage Proability Plots that as the sample size grows, the coverage probabilities of all the intervals gets closer to the ideal coverage probability of $1-\alpha$. The coverage probabilities also appear to be closer to the $1-\alpha$ when p is close to 0.5, rather than extreme values of p towards 0 and 1. The Wald Interval coverage probabilities display a lot of variability, with most of the combinations of n and p falling below the 95% threshold. On the other hand, the Clopper Pearson Interval appears to be above the 95% mark for most combinations, but this comes at the expense of larger intervals which we will discuss in the following paragraph. The Average Wald Interval and the Score Intervals do a fairly good job, although the Adjusted Wald is not doing great for a small sample size of 15. The Bootstrap Percentile Interval and the Bootstrap T Interval are consistently below the ideal convergence probability, with the Bootstrap T Interval showing a significant discrepancy for a small sample size.
+
+### Miss Above and Miss High
+
+In addition, the proportions that miss above and miss below, tell us how often the confidence intervals are too low or too high, respectively, relative to the true value. 
+From the wald_summary, the intervals severely miss high, with almost no cases of missing low. As 
+p increases, the miss low and miss high values become more balanced, especially with larger sample sizes. At high p, the intervals often miss low, reflecting underestimation. 
+Adjusted_wald_summary: rarely miss low, slight overestimation (miss high is small) when p is very small (0.01). Balanced miss low and miss high rates, for mid-range p indicating well-centered intervals. Tend to underestimate (miss low increases), with almost no overestimation (miss high is close to 0) for high p. The Adjusted Wald method performs well overall but shows a slight conservative bias at high proportions.
+From cp_summary, Low proportions tend to be overestimated (high miss high). Mid-range p show a better balance of miss low and miss high. High p tend to be underestimated (high miss low), especially for small sample sizes.
+From the score_summary, for small values of p, especially around 0.01, intervals rarely miss low (0.000) but often miss high (e.g., 0.121 for n=15). This shows a tendency to overestimate at the lower boundary of the proportion scale. For larger values of p, like 0.99, the intervals tend to miss low (e.g., 0.145 for n=15) and rarely miss high, indicating underestimation for values near 1.
+From boot_per_summary, low proportions are often overestimated (high miss high), while high proportions tend to be underestimated (high miss low). Mid-range proportions (p=0.50) show relatively balanced miss low and miss high rates, indicating good centering of the intervals.
+For high proportions, bootstrap percentile method shows a tendency to miss low, meaning it often underestimates the true value.
+From boot_t_summary, Miss high is very significant, especially for smaller sample sizes. For instance, at p=0.01 and n=15, miss high is 87.9%, indicating a strong tendency to overestimate the true proportion. The miss low and miss high are more balanced in this range, but there’s still a tendency to miss high at lower sample sizes. At high values of p, the intervals often miss low, reflecting underestimation of the true proportion.
+
+### Average Lengths
 
 We can see from all of the average lengths plots that as the sample size grows, the average lengths of the intervals increases. This means that as our sample size increases, we are able to get a more accurate picture (a narrower interval) of where the true value of p is. For all intervals, we can also see that there is a peak in the average length around p=0.5. This makes sense because p=0.5 maximizes the standard error. A probability of 0.5 means that it is essentially a toss-up - there is an equal probability of observing a success or a failure. When comparing p=0.5 for varying sample sizes:
 
@@ -862,6 +878,9 @@ We can see from all of the average lengths plots that as the sample size grows, 
 -   At n = 100, the Adjusted Wald Interval has the smallest average length (closely followed by the Score Interval) and the Clopper-Pearson has the largest average length.
 
 The standard errors for these average lengths show similar patterns with the Adjusted Wald and the Score Intervals showing the least amount of variability and the Clopper-Pearson showing the greatest standard error.
+
+
+    
 
 # Conclusions
 
