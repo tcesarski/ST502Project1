@@ -1,20 +1,12 @@
-------------------------------------------------------------------------
-
+---
 title: "ST 502 Project 1"
-
 author: "Taylor Cesarski and Jie Chen"
+date: "2024-10-05"
+output: 
+  pdf_document: default
+---
 
-output: pdf_document
-
-------------------------------------------------------------------------
-
-```{r}
-
-pdf(width = 9, height = 9)
-
-```
-
-# Goals of Simulation Study
+# Introduction and Goals of Simulation Study
 
 For this study, we will utilize simulation to analyze different confidence interval methods for estimating a true probability of success (p) from a binomial random sample. We will look at the following confidence interval methods:
 
@@ -48,7 +40,9 @@ The Wald Interval can be found using the following function:
 
 wald_int <- function(y, n, alpha = 0.05){
 
-  #Generate the lower and upper endpoints using sample proportion, critical value from standard normal distribution, and estimated standard error.
+  #Generate the lower and upper endpoints using sample proportion, 
+  #critical value from standard normal distribution, 
+  #and estimated standard error.
 
   c(y/n -qnorm(1-alpha/2)*sqrt(((y/n)*(1-y/n))/n),
 
@@ -424,18 +418,29 @@ boot_t_coverage_probabilities <-numeric(45)
 
 for (i in 1:45) {
 
-  wald_coverage_probabilities[i] <- mean(wald_confidence_int[[i]]$upper > repeated_p[i] & wald_confidence_int[[i]]$lower < repeated_p[i])
+  wald_coverage_probabilities[i] <- 
+    mean(wald_confidence_int[[i]]$upper > repeated_p[i] & 
+           wald_confidence_int[[i]]$lower < repeated_p[i])
   
-  adjusted_wald_coverage_probabilities[i] <- mean(adjusted_wald_CI[[i]]$upper > repeated_p[i] & adjusted_wald_CI[[i]]$lower < repeated_p[i])
+  adjusted_wald_coverage_probabilities[i] <- 
+    mean(adjusted_wald_CI[[i]]$upper > repeated_p[i] & 
+           adjusted_wald_CI[[i]]$lower < repeated_p[i])
 
-  cp_coverage_probabilities[i] <- mean(cp_confidence_int[[i]]$upper > repeated_p[i] & cp_confidence_int[[i]]$lower < repeated_p[i])
+  cp_coverage_probabilities[i] <- 
+    mean(cp_confidence_int[[i]]$upper > repeated_p[i] & 
+           cp_confidence_int[[i]]$lower < repeated_p[i])
   
-  score_coverage_probabilities[i] <- mean(score_CI[[i]]$upper > repeated_p[i] & score_CI[[i]]$lower < repeated_p[i])
+  score_coverage_probabilities[i] <- 
+    mean(score_CI[[i]]$upper > repeated_p[i] & 
+           score_CI[[i]]$lower < repeated_p[i])
 
-  boot_per_coverage_probabilities[i] <- mean(boot_per_CI[[i]]$upper > repeated_p[i] & boot_per_CI[[i]]$lower < repeated_p[i])
+  boot_per_coverage_probabilities[i] <- 
+    mean(boot_per_CI[[i]]$upper > repeated_p[i] & 
+           boot_per_CI[[i]]$lower < repeated_p[i])
   
-  boot_t_coverage_probabilities[i] <- mean(boot_t_CI[[i]]$upper > repeated_p[i] & boot_t_CI[[i]]$lower < repeated_p[i]
-                                             )
+  boot_t_coverage_probabilities[i] <- 
+    mean(boot_t_CI[[i]]$upper > repeated_p[i] & 
+           boot_t_CI[[i]]$lower < repeated_p[i])
 
 }
 
@@ -521,32 +526,62 @@ repeated_p <- rep(p, 3)
 
 #Store the n, p, lengths, coverage probabilities, and % missing above and below.
 
-wald_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = wald_lengths, coverage_probs = wald_coverage_probabilities, miss_low = wald_miss_low, miss_high = wald_miss_high)
+wald_summary <- data.frame(n = n_values, 
+                           p = repeated_p, 
+                           avg_int_lengths = wald_lengths, 
+                           coverage_probs = wald_coverage_probabilities, 
+                           miss_low = wald_miss_low, 
+                           miss_high = wald_miss_high)
 
 #Display first few rows of wald_summary.
 head(wald_summary)
 
-adjusted_wald_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = adjusted_wald_lengths, coverage_probs = adjusted_wald_coverage_probabilities, miss_low = adjusted_wald_miss_low, miss_high = adjusted_wald_miss_high)
+adjusted_wald_summary <- data.frame(n = n_values, 
+                                    p = repeated_p, 
+                                    avg_int_lengths = adjusted_wald_lengths, 
+                                    coverage_probs = adjusted_wald_coverage_probabilities, 
+                                    miss_low = adjusted_wald_miss_low,
+                                    miss_high = adjusted_wald_miss_high)
 
 #Display first few rows of adjusted_wald_summary.
 head(adjusted_wald_summary)
 
-cp_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = cp_lengths, coverage_probs = cp_coverage_probabilities, miss_low = cp_miss_low, miss_high = cp_miss_high)
+cp_summary <- data.frame(n = n_values, 
+                         p = repeated_p, 
+                         avg_int_lengths = cp_lengths, 
+                         coverage_probs = cp_coverage_probabilities, 
+                         miss_low = cp_miss_low, 
+                         miss_high = cp_miss_high)
 
 #Display first few rows of cp_summary.
 head(cp_summary)
 
-score_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = score_lengths, coverage_probs = score_coverage_probabilities, miss_low = score_miss_low, miss_high = score_miss_high)
+score_summary <- data.frame(n = n_values, 
+                            p = repeated_p, 
+                            avg_int_lengths = score_lengths, 
+                            coverage_probs = score_coverage_probabilities, 
+                            miss_low = score_miss_low, 
+                            miss_high = score_miss_high)
 
 #Display first few rows of score_summary.
 head(score_summary)
 
-boot_per_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_per_lengths, coverage_probs = boot_per_coverage_probabilities, miss_low = boot_per_miss_low, miss_high = boot_per_miss_high)
+boot_per_summary <- data.frame(n = n_values, 
+                               p = repeated_p, 
+                               avg_int_lengths = boot_per_lengths, 
+                               coverage_probs = boot_per_coverage_probabilities, 
+                               miss_low = boot_per_miss_low, 
+                               miss_high = boot_per_miss_high)
 
 #Display first few rows of boot_per_summary.
 head(boot_per_summary)
 
-boot_t_summary <- data.frame(n = n_values, p = repeated_p, avg_int_lengths = boot_t_lengths, coverage_probs = boot_t_coverage_probabilities, miss_low = boot_t_miss_low, miss_high = boot_t_miss_high)
+boot_t_summary <- data.frame(n = n_values, 
+                             p = repeated_p, 
+                             avg_int_lengths = boot_t_lengths, 
+                             coverage_probs = boot_t_coverage_probabilities, 
+                             miss_low = boot_t_miss_low, 
+                             miss_high = boot_t_miss_high)
 
 #Display first few rows of boot_t_summary
 head(boot_t_summary)
@@ -721,11 +756,11 @@ As the sample size increases for the wald interval, the average lengths of the i
 ```{r}
 
 ggplot(wald_summary, aes(x=p, y=wald_lengths)) +
-
+  #Use a line graph
   geom_line()+
-
+  #Facet wrap over the sample sizes.
   facet_wrap(~n) + 
-
+  #Add a title and label to the y axis.
   labs(title = "Wald Interval Average Lengths by Sample Size",
 
        y = "Average Lengths")
@@ -738,11 +773,13 @@ The plots below indicating that as the sample size increases, the intervals beco
 
 ```{r}
 ggplot(adjusted_wald_summary, aes(x=p, y=adjusted_wald_lengths)) +
-
+  #Use a line graph.
   geom_line()+
-
+  
+  #Facet wrap over the sample sizes.
   facet_wrap(~n) + 
-
+ 
+  #Add a title and label to the y axis.
   labs(title = "Adjusted Wald Interval Average Lengths by Sample Size",
 
        y = "Average Lengths")
@@ -758,11 +795,13 @@ As the sample size increases for the Clopper-Pearson interval, the average lengt
 #Clopper-Pearson Average Lengths Plot
 
 ggplot(cp_summary, aes(x=p, y=cp_lengths)) +
-
+  #Use a line graph.
   geom_line()+
-
+  
+  #Facet wrap over the sample sizes.
   facet_wrap(~n) + 
 
+  #Add a title and label to the y axis.
   labs(title = "Clopper-Pearson Interval Average Lengths by Sample Size",
 
        y = "Average Lengths")
@@ -777,11 +816,13 @@ As the sample size increases , the average lengths of the intervals decreases. T
 #Score Interval Average Lengths Plot
 
 ggplot(score_summary, aes(x=p, y=score_lengths)) +
-
+  #Use a line graph.
   geom_line(na.rm = TRUE)+
 
+  #Facet wrap over the sample sizes.
   facet_wrap(~n) + 
-
+  
+  #Add a title and label to the y axis.
   labs(title = "Score Interval Average Lengths by Sample Size",
 
        y = "Average Lengths")
@@ -797,11 +838,13 @@ As the sample size increases for the Raw Percentile Interval, the average length
 #Bootstrap Percentile Interval Average Lengths Plot
 
 ggplot(boot_per_summary, aes(x=p, y=boot_per_lengths)) +
-
+  #Use a line graph.
   geom_line(na.rm = TRUE)+
 
+  #Facet wrap over the sample sizes.
   facet_wrap(~n) + 
 
+  #Add a title and label to the y axis.
   labs(title = "Bootstrap Percentile Interval Average Lengths by Sample Size",
 
        y = "Average Lengths")
@@ -816,11 +859,13 @@ The following plots also show that as the sample size increases, the average int
 #Bootstrap T Interval Average Lengths Plot
 
 ggplot(boot_t_summary, aes(x=p, y=boot_t_lengths)) +
-
+  #Use a line graph.
   geom_line(na.rm = TRUE)+
-
+  
+  #Facet wrap over the sample sizes.
   facet_wrap(~n) + 
 
+  #Add a title and label to the y axis.
   labs(title = "Bootstrap T Interval Average Lengths by Sample Size",
 
        y = "Average Lengths")
@@ -833,22 +878,22 @@ Below are the standard errors of the average lengths computed in the previous se
 
 ```{r}
 sd_wald <-sd(wald_lengths) 
-paste("The standard error of the average lengths for the Wald Interval is ", sd_wald)
+paste("The SE of the average lengths for the Wald Interval is ", sd_wald)
 
 sd_adjusted_wald<- sd(adjusted_wald_lengths)
-paste("The standard error of the average lengths for the Adjusted Wald Interval is ", sd_adjusted_wald)
+paste("The SE of the average lengths for the Adjusted Wald Interval is ", sd_adjusted_wald)
 
 sd_cp <- sd(cp_lengths)
-paste("The standard error of the average lengths for the Clopper Pearson Interval is ", sd_cp)
+paste("The SE of the average lengths for the Clopper Pearson Interval is ", sd_cp)
 
 sd_score <- sd(score_lengths)
-paste("The standard error of the average lengths for the Score Interval is ", sd_score)
+paste("The SE of the average lengths for the Score Interval is ", sd_score)
 
 sd_boot_per <-sd(boot_per_lengths, na.rm = TRUE)
-paste("The standard error of the average lengths for the Bootstrap Percentile Interval is ", sd_boot_per)
+paste("The SE of the average lengths for the Bootstrap Percentile Interval is ", sd_boot_per)
 
 sd_boot_t <-sd(boot_t_lengths, na.rm=TRUE)
-paste("The standard error of the average lengths for the Bootstrap T Interval is ", sd_boot_t)
+paste("The SE of the average lengths for the Bootstrap T Interval is ", sd_boot_t)
 
 ```
 
@@ -858,7 +903,7 @@ paste("The standard error of the average lengths for the Bootstrap T Interval is
 
 We can see from the Coverage Proability Plots that as the sample size grows, the coverage probabilities of all the intervals gets closer to the ideal coverage probability of $1-\alpha$. The coverage probabilities also appear to be closer to the $1-\alpha$ when p is close to 0.5, rather than extreme values of p towards 0 and 1. The Wald Interval coverage probabilities display a lot of variability, with most of the combinations of n and p falling below the 95% threshold. On the other hand, the Clopper Pearson Interval appears to be above the 95% mark for most combinations, but this comes at the expense of larger intervals which we will discuss in the following paragraph. The Average Wald Interval and the Score Intervals do a fairly good job, although the Adjusted Wald is not doing great for a small sample size of 15. The Bootstrap Percentile Interval and the Bootstrap T Interval are consistently below the ideal convergence probability, with the Bootstrap T Interval showing a significant discrepancy for a small sample size.
 
-### Miss Above and Miss High
+### Miss Low and Miss High
 
 In addition, the proportions that miss above and miss below, tell us how often the confidence intervals are too low or too high, respectively, relative to the true value. 
 From the wald_summary, the intervals severely miss low, with almost no cases of missing high. As p increases, the miss low and miss high values become more balanced, especially with larger sample sizes. At high p, the intervals often miss high, reflecting overestimation. 
